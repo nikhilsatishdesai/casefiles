@@ -463,3 +463,16 @@ a:focus-visible,
   text-shadow: 0 0 6px rgba(255, 120, 190, 0.9), 0 0 18px rgba(255, 46, 136, 0.75), 0 0 48px rgba(255, 46, 136, 0.45), 0 0 90px rgba(164, 106, 255, 0.35);
   animation: neon-flicker 7s infinite;
 }
+
+/* copy that depends on the pointer in hand */
+.only-touch {
+  display: none;
+}
+@media (hover: none) {
+  .only-touch {
+    display: inline;
+  }
+  .only-mouse {
+    display: none;
+  }
+}
