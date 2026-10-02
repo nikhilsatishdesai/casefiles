@@ -34,6 +34,7 @@ export default function TitleView() {
         seedKey="title"
       />
       <div className="vignette" />
+      <div className="title-scrim" />
 
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
         <motion.div

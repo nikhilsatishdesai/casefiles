@@ -49,6 +49,8 @@ class AudioEngine {
   private windGain: GainNode | null = null;
   private thunderTimer: ReturnType<typeof setTimeout> | null = null;
   private currentWeather: WeatherKind | null = null;
+  /** while a stage is showing lightning, it owns the thunder too */
+  private stormClaims = 0;
 
   private musicMode: MusicMode = "off";
   private musicTimer: ReturnType<typeof setInterval> | null = null;
@@ -170,25 +172,44 @@ class AudioEngine {
 
   private scheduleThunder() {
     const fire = () => {
-      if (this.currentWeather !== "storm" || !this.ctx || !this.ambBus) return;
-      const ctx = this.ctx;
-      const dur = 2.5 + Math.random() * 2;
-      const src = ctx.createBufferSource();
-      src.buffer = this.makeNoise(dur);
-      const lp = ctx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.setValueAtTime(400, ctx.currentTime);
-      lp.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + dur);
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.7, ctx.currentTime + 0.08);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + dur);
-      src.connect(lp).connect(g).connect(this.ambBus);
-      src.start();
-      src.stop(ctx.currentTime + dur + 0.1);
+      if (this.currentWeather !== "storm") return;
+      if (this.stormClaims === 0) this.thunder(0, 0.8);
       this.thunderTimer = setTimeout(fire, 9000 + Math.random() * 18000);
     };
     this.thunderTimer = setTimeout(fire, 3000 + Math.random() * 8000);
+  }
+
+  /** A stage that draws lightning claims the storm so flash and rumble line up. */
+  claimStorm(): () => void {
+    this.stormClaims++;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.stormClaims = Math.max(0, this.stormClaims - 1);
+    };
+  }
+
+  /** Thunder after `delay` seconds — near strikes crack, far ones roll. */
+  thunder(delay = 0, strength = 0.8) {
+    if (!this.ctx || !this.ambBus || !this.unlocked) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + Math.max(0, delay);
+    const dur = 2.2 + Math.random() * 2 + delay * 0.6;
+    const src = ctx.createBufferSource();
+    src.buffer = this.makeNoise(dur);
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(delay < 0.6 ? 900 : 420, t0);
+    lp.frequency.exponentialRampToValueAtTime(55, t0 + dur);
+    const g = ctx.createGain();
+    const peak = Math.max(0.05, Math.min(0.9, strength * (delay < 0.6 ? 1 : 0.7)));
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + (delay < 0.6 ? 0.03 : 0.25));
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(lp).connect(g).connect(this.ambBus);
+    src.start(t0);
+    src.stop(t0 + dur + 0.1);
   }
 
   private stopAmbience() {

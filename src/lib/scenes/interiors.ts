@@ -956,7 +956,7 @@ export const paintOffice: Painter = (ctx, mood, weather, rnd, out) => {
   glassWindow(ctx, { x: 160, y: 26, w: 160, h: 126 }, mood, weather, rnd, out, {
     panes: [2, 1],
     blinds: true,
-    beam: { floorY: fy, dx: 60, color: mix(mood.windowCool, mood.window, 0.35), alpha: 0.09 },
+    beam: { floorY: fy, dx: 60, color: mix(mood.windowCool, mood.window, 0.35), alpha: 0.05 },
   });
   // the frosted door, name lettered backwards
   ctx.fillStyle = "#16120e";

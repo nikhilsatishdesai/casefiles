@@ -80,6 +80,14 @@ body {
   background: radial-gradient(ellipse at center, transparent 52%, rgba(4, 6, 10, 0.55) 100%);
 }
 
+/* keeps title-screen copy legible over a busy, glowing skyline */
+.title-scrim {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 46% 52% at 50% 52%, rgba(4, 6, 10, 0.72) 0%, rgba(4, 6, 10, 0.45) 55%, rgba(4, 6, 10, 0) 100%);
+}
+
 .film-grain {
   pointer-events: none;
   position: absolute;
