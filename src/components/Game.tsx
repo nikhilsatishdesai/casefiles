@@ -235,7 +235,7 @@ export default function Game() {
                   }}
                   className={`hud-btn font-label rounded-sm transition-colors ${
                     view === "accuse"
-                      ? "bg-[rgba(255, 58, 110,0.18)] text-[var(--rose)]"
+                      ? "bg-[rgba(255,58,110,0.18)] text-[var(--rose)]"
                       : "text-[var(--rose)] opacity-80 hover:opacity-100"
                   }`}
                 >
@@ -279,7 +279,7 @@ function HudButton({
       aria-label={badge ? `${label} (${badge} new)` : label}
       className={`hud-btn font-label relative flex shrink-0 items-center gap-1.5 rounded-sm transition-colors ${
         active
-          ? "bg-[rgba(255, 180, 61,0.14)] text-[var(--amber)]"
+          ? "bg-[rgba(255,180,61,0.14)] text-[var(--amber)]"
           : "text-[var(--steel)] hover:text-[var(--paper-dim)]"
       }`}
     >

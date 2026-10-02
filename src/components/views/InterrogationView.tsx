@@ -298,9 +298,9 @@ export default function InterrogationView() {
                       title={l.question}
                       className={`shrink-0 rounded-sm border px-2.5 py-1.5 text-xs transition-colors hover:bg-[rgba(232,226,212,0.05)] disabled:opacity-40 ${
                         l.kind === "followup"
-                          ? "border-[rgba(255, 180, 61,0.55)] text-[var(--amber)]"
+                          ? "border-[rgba(255,180,61,0.55)] text-[var(--amber)]"
                           : l.kind === "lead"
-                            ? "border-[rgba(58, 232, 216,0.4)] text-[var(--teal)]"
+                            ? "border-[rgba(58,232,216,0.4)] text-[var(--teal)]"
                             : "border-[var(--line-strong)] text-[var(--paper-dim)]"
                       }`}
                     >
@@ -322,7 +322,7 @@ export default function InterrogationView() {
                 aria-expanded={showTray}
                 title="Present evidence"
                 className={`btn-ghost font-label shrink-0 rounded-sm px-3 sm:px-4 ${
-                  showTray ? "border-[rgba(255, 180, 61,0.6)] text-[var(--amber)]" : ""
+                  showTray ? "border-[rgba(255,180,61,0.6)] text-[var(--amber)]" : ""
                 }`}
               >
                 ◈<span className="hidden sm:inline"> PRESENT</span>
@@ -379,7 +379,7 @@ export default function InterrogationView() {
                         className={`group flex w-[132px] shrink-0 flex-col items-start rounded-sm border p-2.5 text-left transition-all duration-200 disabled:opacity-50 ${
                           used
                             ? "border-[var(--line)] opacity-55"
-                            : "border-[var(--line-strong)] hover:border-[rgba(255, 180, 61,0.6)] hover:bg-[rgba(255, 180, 61,0.05)]"
+                            : "border-[var(--line-strong)] hover:border-[rgba(255,180,61,0.6)] hover:bg-[rgba(255,180,61,0.05)]"
                         }`}
                         title={`Present: ${ev.name}`}
                       >
@@ -525,7 +525,7 @@ function Bubble({
     return (
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex justify-end">
         {ev ? (
-          <div className="flex max-w-[85%] items-center gap-3 rounded-sm border border-[rgba(255, 180, 61,0.5)] bg-[rgba(28,20,8,0.88)] px-3 py-2.5 backdrop-blur-sm">
+          <div className="flex max-w-[85%] items-center gap-3 rounded-sm border border-[rgba(255,180,61,0.5)] bg-[rgba(28,20,8,0.88)] px-3 py-2.5 backdrop-blur-sm">
             <EvidenceIcon icon={ev.icon} size={28} />
             <div>
               <div className="font-label text-[var(--amber-dim)]">YOU PUT ON THE TABLE</div>
@@ -545,7 +545,7 @@ function Bubble({
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="flex flex-col items-start">
       <div
         className={`glass-bright max-w-[88%] rounded-sm px-4 py-3 text-[15px] leading-relaxed text-[var(--paper-dim)] ${
-          m.isBreak ? "border-[rgba(255, 58, 110,0.5)]" : ""
+          m.isBreak ? "border-[rgba(255,58,110,0.5)]" : ""
         }`}
       >
         <div className="font-label mb-1.5 text-[var(--steel)]">
@@ -558,24 +558,24 @@ function Bubble({
       </div>
       {!typing && (m.statementId || revealed || statement || m.isBreak || m.unmoved) && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-1.5 flex max-w-[88%] flex-wrap gap-1.5">
-          {m.statementId && <span className="marker border-[rgba(58, 232, 216,0.4)] text-[var(--teal)]">◆ ON THE RECORD</span>}
+          {m.statementId && <span className="marker border-[rgba(58,232,216,0.4)] text-[var(--teal)]">◆ ON THE RECORD</span>}
           {revealed && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onExamine(revealed.id);
               }}
-              className="marker flex items-center gap-1.5 border-[rgba(255, 180, 61,0.5)] text-[var(--amber)] hover:bg-[rgba(255, 180, 61,0.08)]"
+              className="marker flex items-center gap-1.5 border-[rgba(255,180,61,0.5)] text-[var(--amber)] hover:bg-[rgba(255,180,61,0.08)]"
             >
               <EvidenceIcon icon={revealed.icon} size={16} /> NEW EVIDENCE · {revealed.name.toUpperCase()} · EXAMINE
             </button>
           )}
           {statement && (
-            <span className="marker border-[rgba(255, 58, 110,0.5)] text-[var(--rose)]">
+            <span className="marker border-[rgba(255,58,110,0.5)] text-[var(--rose)]">
               ✕ CONTRADICTS <s className="ml-1 normal-case tracking-normal opacity-80">{statement.text}</s>
             </span>
           )}
-          {m.isBreak && <span className="marker border-[rgba(255, 58, 110,0.5)] text-[var(--rose)]">BREAKING POINT</span>}
+          {m.isBreak && <span className="marker border-[rgba(255,58,110,0.5)] text-[var(--rose)]">BREAKING POINT</span>}
           {m.unmoved && <span className="marker border-[var(--line)] text-[var(--steel-dim)]">NO REACTION</span>}
         </motion.div>
       )}

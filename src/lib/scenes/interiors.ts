@@ -116,7 +116,7 @@ function corkboard(ctx: CanvasRenderingContext2D, rnd: () => number, x: number, 
     pins.push([px + 5, py]);
   }
   if (string && pins.length > 2) {
-    ctx.strokeStyle = "rgba(255, 58, 110,0.7)";
+    ctx.strokeStyle = "rgba(255,58,110,0.7)";
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(pins[0][0] + 0.5, pins[0][1] + 0.5);
@@ -754,7 +754,7 @@ export const paintBar: Painter = (ctx, mood, weather, rnd, out) => {
 export const paintApartment: Painter = (ctx, mood, weather, rnd, out) => {
   room(ctx, rnd, out, { wall: "#26201c", floor: "#1c1612", floorKind: "planks" });
   const fy = 190;
-  ctx.fillStyle = "rgba(255, 180, 61,0.06)";
+  ctx.fillStyle = "rgba(255,180,61,0.06)";
   for (let y = 22; y < fy - 8; y += 14) {
     for (let x = (y / 14) % 2 ? 7 : 0; x < SCENE_W; x += 14) {
       ctx.fillRect(x + 3, y, 2, 1);
@@ -1047,7 +1047,7 @@ export const paintStation: Painter = (ctx, mood, weather, rnd, out) => {
   ctx.fillStyle = "#e8a849";
   drawPixelText(ctx, "DEPARTURES", 322, 64);
   const rows = ["22:15 HARBOR LINE", "22:40 MIRROR PASS", "23:05 ROWAN HTS", "23:50 NIGHT MAIL"];
-  ctx.fillStyle = "rgba(255, 180, 61,0.75)";
+  ctx.fillStyle = "rgba(255,180,61,0.75)";
   rows.forEach((r, i) => drawPixelText(ctx, r, 322, 74 + i * 7));
   out.lights.push({ x: 318, y: 62, w: 114, h: 42, color: "#e8a849", flicker: 0.04, glow: 0.8 });
 

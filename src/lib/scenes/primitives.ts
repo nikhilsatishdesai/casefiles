@@ -780,8 +780,8 @@ export function room(ctx: CanvasRenderingContext2D, rnd: () => number, out: Pain
   ctx.fillStyle = shade(o.wall, 0.78);
   ctx.fillRect(0, fy - 4, SCENE_W, 1);
   const ao = ctx.createLinearGradient(0, fy, 0, fy + 12);
-  ao.addColorStop(0, "rgba(5, 3, 12,0.5)");
-  ao.addColorStop(1, "rgba(5, 3, 12,0)");
+  ao.addColorStop(0, "rgba(5,3,12,0.5)");
+  ao.addColorStop(1, "rgba(5,3,12,0)");
   ctx.fillStyle = ao;
   ctx.fillRect(0, fy, SCENE_W, 12);
 }
@@ -789,18 +789,18 @@ export function room(ctx: CanvasRenderingContext2D, rnd: () => number, out: Pain
 /** Darken the room's corners — light pools in the middle, never the edges. */
 export function roomVignette(ctx: CanvasRenderingContext2D, strength = 0.45) {
   const l = ctx.createLinearGradient(0, 0, 70, 0);
-  l.addColorStop(0, `rgba(5, 3, 12,${strength})`);
-  l.addColorStop(1, "rgba(5, 3, 12,0)");
+  l.addColorStop(0, `rgba(5,3,12,${strength})`);
+  l.addColorStop(1, "rgba(5,3,12,0)");
   ctx.fillStyle = l;
   ctx.fillRect(0, 0, 70, SCENE_H);
   const r = ctx.createLinearGradient(SCENE_W, 0, SCENE_W - 70, 0);
-  r.addColorStop(0, `rgba(5, 3, 12,${strength})`);
-  r.addColorStop(1, "rgba(5, 3, 12,0)");
+  r.addColorStop(0, `rgba(5,3,12,${strength})`);
+  r.addColorStop(1, "rgba(5,3,12,0)");
   ctx.fillStyle = r;
   ctx.fillRect(SCENE_W - 70, 0, 70, SCENE_H);
   const t = ctx.createLinearGradient(0, 0, 0, 40);
-  t.addColorStop(0, `rgba(5, 3, 12,${strength * 0.9})`);
-  t.addColorStop(1, "rgba(5, 3, 12,0)");
+  t.addColorStop(0, `rgba(5,3,12,${strength * 0.9})`);
+  t.addColorStop(1, "rgba(5,3,12,0)");
   ctx.fillStyle = t;
   ctx.fillRect(0, 0, SCENE_W, 40);
 }

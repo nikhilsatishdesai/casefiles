@@ -88,7 +88,7 @@ export default function AccuseView() {
                     setSuspectId(s.id);
                   }}
                   className={`glass relative flex flex-col items-center gap-2 rounded-sm p-4 transition-all duration-300 ${
-                    on ? "border-[var(--rose)] bg-[rgba(255, 58, 110,0.08)]" : "hover:border-[var(--line-strong)]"
+                    on ? "border-[var(--rose)] bg-[rgba(255,58,110,0.08)]" : "hover:border-[var(--line-strong)]"
                   }`}
                 >
                   {links > 0 && (
@@ -118,7 +118,7 @@ export default function AccuseView() {
                 }}
                 className={`glass rounded-sm px-4 py-3 text-left text-sm transition-all duration-300 ${
                   motiveId === m.id
-                    ? "border-[var(--amber)] bg-[rgba(255, 180, 61,0.08)] text-[var(--amber)]"
+                    ? "border-[var(--amber)] bg-[rgba(255,180,61,0.08)] text-[var(--amber)]"
                     : "text-[var(--paper-dim)] hover:border-[var(--line-strong)]"
                 }`}
               >
@@ -154,7 +154,7 @@ export default function AccuseView() {
                   key={id}
                   onClick={() => toggleCite(id)}
                   className={`glass flex items-center gap-3 rounded-sm p-2.5 text-left transition-all duration-200 ${
-                    on ? "border-[var(--teal)] bg-[rgba(58, 232, 216,0.07)]" : "hover:border-[var(--line-strong)]"
+                    on ? "border-[var(--teal)] bg-[rgba(58,232,216,0.07)]" : "hover:border-[var(--line-strong)]"
                   }`}
                 >
                   <EvidenceIcon icon={ev.icon} size={28} muted={!on && cited.length >= MAX_CITED} />
@@ -186,7 +186,7 @@ export default function AccuseView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(5, 3, 12,0.85)] p-4"
+            className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(5,3,12,0.85)] p-4"
             onClick={() => setConfirming(false)}
           >
             <motion.div
@@ -263,7 +263,7 @@ function WrongAccusation({ name, strikes, onBack }: { name: string; strikes: num
         initial={{ scale: 0.92, y: 24 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 260, damping: 22 }}
-        className="glass-bright w-full max-w-md rounded-sm border-[rgba(255, 58, 110,0.45)] p-8 text-center"
+        className="glass-bright w-full max-w-md rounded-sm border-[rgba(255,58,110,0.45)] p-8 text-center"
       >
         <motion.div
           initial={{ scale: 2.2, rotate: -14, opacity: 0 }}

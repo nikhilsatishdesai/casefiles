@@ -187,25 +187,3 @@ export function TypeLines({
   );
 }
 
-export const EVIDENCE_GLYPH: Record<string, string> = {
-  vial: "⚗",
-  letter: "✉",
-  photo: "▣",
-  print: "◉",
-  phone: "☎",
-  bank: "¤",
-  key: "⚿",
-  knife: "†",
-  glass: "◒",
-  watch: "◷",
-  tape: "▤",
-  ledger: "☰",
-  ticket: "⬖",
-  badge: "★",
-  cloth: "▨",
-  pill: "◓",
-  rope: "∿",
-  camera: "◎",
-  folder: "▧",
-  ring: "◍",
-};

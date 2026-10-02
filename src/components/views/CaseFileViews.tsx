@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Portrait from "@/components/Portrait";
 import { useGame, activeCase } from "@/lib/engine/store";
-import { Label, GhostButton, EVIDENCE_GLYPH } from "@/components/ui/bits";
+import { Label, GhostButton } from "@/components/ui/bits";
+import EvidenceIcon from "@/components/EvidenceIcon";
 import { rngFor } from "@/lib/engine/rng";
 import { audio } from "@/lib/audio/engine";
 import type { EvidenceItem } from "@/lib/engine/types";
@@ -53,7 +54,7 @@ export function EvidenceView() {
               }}
               className={`font-label rounded-sm border px-3 py-1.5 transition-colors ${
                 filter === t
-                  ? "border-[rgba(255, 180, 61,0.6)] text-[var(--amber)]"
+                  ? "border-[rgba(255,180,61,0.6)] text-[var(--amber)]"
                   : "border-[var(--line)] text-[var(--steel)] hover:text-[var(--paper-dim)]"
               }`}
             >
@@ -79,18 +80,38 @@ export function EvidenceView() {
                 transition={{ delay: i * 0.04, duration: 0.4 }}
                 onClick={() => openEvidence(ev.id)}
                 onMouseEnter={() => audio.ui("hover")}
-                className={`glass group relative h-fit rounded-sm p-4 text-left transition-all duration-300 hover:border-[rgba(255, 180, 61,0.45)] ${
-                  pinned ? "border-[rgba(255, 58, 110,0.5)]" : ""
+                className={`glass group relative h-fit rounded-sm p-4 text-left transition-all duration-300 hover:border-[rgba(255,180,61,0.45)] ${
+                  pinned ? "border-[rgba(255,58,110,0.5)]" : ""
                 }`}
               >
                 {pinned && <span className="absolute right-2 top-2 text-[var(--rose)]">◉</span>}
-                <div className="text-2xl text-[var(--amber)]">{EVIDENCE_GLYPH[ev.icon] ?? "◈"}</div>
+                {!progress.seenEvidence.includes(ev.id) && (
+                  <span className="font-label absolute left-2 top-2 rounded-sm bg-[var(--pink)] px-1.5 py-0.5 text-[9px] text-white shadow-[0_0_12px_rgba(255,46,136,0.6)]">
+                    NEW
+                  </span>
+                )}
+                <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-[var(--line)] bg-[rgba(5,3,12,0.45)] transition-colors group-hover:border-[rgba(255,180,61,0.45)]">
+                  <EvidenceIcon icon={ev.icon} size={32} />
+                </div>
                 <div className="mt-2 text-sm leading-snug text-[var(--paper)]">{ev.name}</div>
                 <div className="font-label mt-1 text-[var(--steel)]">{ev.type.toUpperCase()}</div>
                 <div className="mt-2 line-clamp-2 text-xs leading-snug text-[var(--steel)]">{ev.summary}</div>
               </motion.button>
             );
           })}
+          {filter === "all" &&
+            Array.from({ length: caseDef.evidence.length - found.length }, (_, i) => (
+              <div
+                key={`slot-${i}`}
+                className="h-fit rounded-sm border border-dashed border-[var(--line)] p-4 text-left opacity-60"
+                aria-hidden
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-dashed border-[var(--line)] text-[var(--steel-dim)]">
+                  ?
+                </div>
+                <div className="font-label mt-2 text-[var(--steel-dim)]">UNDISCOVERED</div>
+              </div>
+            ))}
         </div>
       </div>
 
@@ -127,7 +148,7 @@ export function EvidenceDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(5, 3, 12,0.75)] p-4"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(5,3,12,0.75)] p-4"
       onClick={onClose}
     >
       <motion.div
@@ -175,9 +196,9 @@ export function EvidenceDetail({
               animate={{ rotateX: tilt.x, rotateY: tilt.y }}
               transition={{ type: "spring", stiffness: 200, damping: 24 }}
               style={{ transformPerspective: 600 }}
-              className="mx-auto flex h-36 w-36 items-center justify-center rounded-sm border border-[var(--line-strong)] bg-[rgba(5, 3, 12,0.5)]"
+              className="mx-auto flex h-36 w-36 items-center justify-center rounded-sm border border-[var(--line-strong)] bg-[rgba(5,3,12,0.5)]"
             >
-              <span className="text-6xl text-[var(--amber)]">{EVIDENCE_GLYPH[ev.icon] ?? "◈"}</span>
+              <EvidenceIcon icon={ev.icon} size={96} />
             </motion.div>
             <div className="font-label mt-3 text-center text-[var(--steel-dim)]">
               MOVE TO EXAMINE
@@ -192,7 +213,7 @@ export function EvidenceDetail({
               <Label className="mt-1">{ev.type.toUpperCase()} · FOUND: {ev.foundAt.toUpperCase()}</Label>
             </div>
             <div className="flex gap-2">
-              <GhostButton onClick={onPin} className={pinned ? "border-[rgba(255, 58, 110,0.6)] text-[var(--rose)]" : ""}>
+              <GhostButton onClick={onPin} className={pinned ? "border-[rgba(255,58,110,0.6)] text-[var(--rose)]" : ""}>
                 {pinned ? "◉ PINNED" : "PIN TO BOARD"}
               </GhostButton>
               <GhostButton onClick={onClose}>CLOSE</GhostButton>
@@ -209,120 +230,277 @@ export function EvidenceDetail({
 /* Evidence board                                                      */
 /* ------------------------------------------------------------------ */
 
+type Pt = { x: number; y: number };
+
+/** a little deterministic tilt per card */
+function tiltOf(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return ((h % 7) - 3) * 0.8;
+}
+
 export function BoardView() {
   const caseDef = useGame((s) => activeCase(s));
   const progress = useGame((s) => (s.activeCaseId ? s.progress[s.activeCaseId] : null));
   const openEvidence = useGame((s) => s.openEvidence);
   const togglePin = useGame((s) => s.togglePin);
+  const setBoardPosition = useGame((s) => s.setBoardPosition);
+  const toggleBoardLink = useGame((s) => s.toggleBoardLink);
 
-  const positions = useMemo(() => {
-    if (!caseDef) return {};
-    const rnd = rngFor(`board:${caseDef.id}`);
-    const map: Record<string, { x: number; y: number; r: number }> = {};
-    caseDef.evidence.forEach((e, i) => {
-      const angle = (i / caseDef.evidence.length) * Math.PI * 2 + rnd() * 0.5;
-      const radius = 26 + rnd() * 14;
-      map[e.id] = {
-        x: 50 + Math.cos(angle) * radius * 0.85,
-        y: 46 + Math.sin(angle) * radius * 0.72,
-        r: (rnd() - 0.5) * 6,
-      };
+  const areaRef = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 1, h: 1 });
+  const [live, setLive] = useState<Record<string, Pt>>({});
+  const [linkFrom, setLinkFrom] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<Pt | null>(null);
+  const drag = useRef<{ id: string; dx: number; dy: number; moved: boolean } | null>(null);
+  useEscapeLayer(!!linkFrom, () => setLinkFrom(null));
+
+  useEffect(() => {
+    const el = areaRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setSize({ w: el.clientWidth || 1, h: el.clientHeight || 1 }));
+    ro.observe(el);
+    setSize({ w: el.clientWidth || 1, h: el.clientHeight || 1 });
+    return () => ro.disconnect();
+  }, []);
+
+  // who's worth a photograph: suspects you've met or whose ground you've walked
+  const suspects = useMemo(() => {
+    if (!caseDef || !progress) return [];
+    return caseDef.suspects.filter(
+      (s) => !s.isWitness && (progress.suspectRuntimes[s.id]?.greeted || progress.visitedLocations.includes(s.presence))
+    );
+  }, [caseDef, progress]);
+
+  const pinned = useMemo(
+    () => (progress ? progress.pinned.filter((id) => progress.foundEvidence.includes(id)) : []),
+    [progress]
+  );
+
+  const defaults = useMemo(() => {
+    const map: Record<string, Pt> = { victim: { x: 50, y: 46 } };
+    suspects.forEach((s, i) => {
+      const t = suspects.length === 1 ? 0.5 : i / (suspects.length - 1);
+      map[`sus:${s.id}`] = { x: 14 + t * 72, y: 15 + Math.sin(t * Math.PI) * -2 };
+    });
+    pinned.forEach((id, i) => {
+      const a = Math.PI * (0.15 + (i / Math.max(1, pinned.length)) * 0.7) + (i % 2) * 0.12;
+      map[`ev:${id}`] = { x: 50 + Math.cos(a) * 38, y: 58 + Math.sin(a) * 26 };
     });
     return map;
-  }, [caseDef]);
+  }, [suspects, pinned]);
 
   if (!caseDef || !progress) return null;
-  const pinned = progress.pinned.filter((id) => progress.foundEvidence.includes(id));
+  const saved = progress.board.positions;
+  const pos = (id: string): Pt => live[id] ?? saved[id] ?? defaults[id] ?? { x: 50, y: 50 };
+  const cards = ["victim", ...suspects.map((s) => `sus:${s.id}`), ...pinned.map((id) => `ev:${id}`)];
+  const links = progress.board.links.filter(([a, b]) => cards.includes(a) && cards.includes(b));
+
+  const toPct = (clientX: number, clientY: number): Pt => {
+    const r = areaRef.current!.getBoundingClientRect();
+    return {
+      x: Math.max(4, Math.min(96, ((clientX - r.left) / r.width) * 100)),
+      y: Math.max(6, Math.min(94, ((clientY - r.top) / r.height) * 100)),
+    };
+  };
+
+  const startDrag = (id: string, e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button")) return;
+    const p = toPct(e.clientX, e.clientY);
+    const c = pos(id);
+    drag.current = { id, dx: c.x - p.x, dy: c.y - p.y, moved: false };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const moveDrag = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const p = toPct(e.clientX, e.clientY);
+    d.moved = true;
+    setLive((l) => ({ ...l, [d.id]: { x: p.x + d.dx, y: p.y + d.dy } }));
+  };
+  const endDrag = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    const p = live[d.id];
+    if (d.moved && p) {
+      setBoardPosition(d.id, { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 });
+      audio.ui("pin");
+    }
+    setLive((l) => {
+      const n = { ...l };
+      delete n[d.id];
+      return n;
+    });
+  };
+
+  const pinClick = (id: string) => {
+    if (!linkFrom) {
+      setLinkFrom(id);
+      audio.ui("click");
+      return;
+    }
+    if (linkFrom !== id) {
+      toggleBoardLink(linkFrom, id);
+      audio.ui("pin");
+    }
+    setLinkFrom(null);
+    setCursor(null);
+  };
+
+  /** a string sagging between two pins, in px */
+  const stringPath = (a: Pt, b: Pt) => {
+    const ax = (a.x / 100) * size.w;
+    const ay = (a.y / 100) * size.h;
+    const bx = (b.x / 100) * size.w;
+    const by = (b.y / 100) * size.h;
+    const sag = 18 + Math.hypot(bx - ax, by - ay) * 0.08;
+    const mx = (ax + bx) / 2;
+    const my = (ay + by) / 2 + sag;
+    return { d: `M${ax},${ay} Q${mx},${my} ${bx},${by}`, mid: { x: mx, y: (ay + by) / 2 + sag / 2 } };
+  };
+  const cardPin = (id: string, color = "var(--rose)") => (
+    <button
+      onClick={() => pinClick(id)}
+      className={`absolute left-1/2 top-0 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[rgba(0,0,0,0.4)] shadow-[0_2px_4px_rgba(0,0,0,0.5)] transition-transform hover:scale-125 ${
+        linkFrom === id ? "scale-125 ring-2 ring-[var(--cyan)]" : ""
+      }`}
+      style={{ background: `radial-gradient(circle at 35% 35%, #ffb0c8, ${color} 60%)` }}
+      aria-label="Tie a string from this pin"
+      title="Tie a string"
+    />
+  );
 
   return (
     <div className="corkboard absolute inset-0">
       <div className="absolute inset-0 flex flex-col px-4 pb-24 pt-[6vh] md:px-10">
-        <header className="flex items-end justify-between">
+        <header className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <Label>CASE FILE · EPISODE {String(caseDef.number).padStart(2, "0")}</Label>
             <h2 className="mt-1 font-display text-xl text-[var(--paper)] md:text-2xl">EVIDENCE BOARD</h2>
           </div>
-          <Label>{pinned.length} PINNED · PIN EVIDENCE FROM THE LOCKER</Label>
+          <Label className={linkFrom ? "text-[var(--cyan)]" : ""}>
+            {linkFrom ? "NOW CLICK ANOTHER PIN · ESC TO CANCEL" : `${pinned.length} PINNED · DRAG CARDS · CLICK TWO PINS TO TIE A STRING`}
+          </Label>
         </header>
 
-        <div className="relative mt-4 flex-1">
+        <div
+          ref={areaRef}
+          className="relative mt-4 flex-1 select-none"
+          onPointerMove={(e) => {
+            moveDrag(e);
+            if (linkFrom) setCursor(toPct(e.clientX, e.clientY));
+          }}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
           {/* strings */}
-          <svg className="pointer-events-none absolute inset-0 h-full w-full">
-            {pinned.map((id) => {
-              const pos = positions[id];
-              if (!pos) return null;
+          <svg className="pointer-events-none absolute inset-0 h-full w-full overflow-visible">
+            {suspects.map((s) => {
+              const { d } = stringPath(pos("victim"), pos(`sus:${s.id}`));
+              return <path key={s.id} d={d} className="board-thread" />;
+            })}
+            {links.map(([a, b]) => {
+              const { d } = stringPath(pos(a), pos(b));
               return (
-                <line
-                  key={id}
-                  x1="50%"
-                  y1="42%"
-                  x2={`${pos.x}%`}
-                  y2={`${pos.y}%`}
-                  className="pin-string"
-                />
+                <g key={`${a}|${b}`}>
+                  <path d={d} className="pin-string-glow" />
+                  <path d={d} className="pin-string" />
+                </g>
               );
             })}
+            {linkFrom && cursor && <path d={stringPath(pos(linkFrom), cursor).d} className="pin-string" strokeDasharray="5 4" />}
           </svg>
 
-          {/* victim card — the center of everything */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="absolute left-1/2 top-[42%] z-10 -translate-x-1/2 -translate-y-1/2"
+          {/* snip a string at its middle */}
+          {links.map(([a, b]) => {
+            const { mid } = stringPath(pos(a), pos(b));
+            return (
+              <button
+                key={`x-${a}|${b}`}
+                onClick={() => {
+                  toggleBoardLink(a, b);
+                  audio.ui("paper");
+                }}
+                className="absolute z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[rgba(255,58,110,0.6)] bg-[rgba(20,8,16,0.85)] text-[10px] text-[var(--rose)] opacity-30 transition-opacity hover:opacity-100"
+                style={{ left: mid.x, top: mid.y }}
+                aria-label="Cut this string"
+                title="Cut the string"
+              >
+                ✕
+              </button>
+            );
+          })}
+
+          {/* the victim, at the center of everything */}
+          <div
+            className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none active:cursor-grabbing"
+            style={{ left: `${pos("victim").x}%`, top: `${pos("victim").y}%` }}
+            onPointerDown={(e) => startDrag("victim", e)}
           >
-            <div className="w-44 rotate-[-1.5deg] rounded-[2px] bg-[#e8e2d4] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.6)]">
-              <div className="absolute left-1/2 top-1 h-2.5 w-2.5 -translate-x-1/2 rounded-full bg-[var(--rose)] shadow" />
-              <div className="flex justify-center bg-[#0c1018] py-2">
+            <div className="relative w-40 rounded-[2px] bg-[#ece6d8] p-3 shadow-[0_10px_30px_rgba(0,0,0,0.6)]" style={{ transform: "rotate(-1.5deg)" }}>
+              {cardPin("victim")}
+              <div className="flex justify-center bg-[#0c0816] py-2">
                 <Portrait def={caseDef.victim.portrait} seed="victim" size={64} mood="calm" />
               </div>
-              <div className="font-typewriter mt-2 text-center text-sm font-bold uppercase text-[#211c14]">
-                {caseDef.victim.name}
-              </div>
-              <div className="font-typewriter text-center text-[10px] uppercase text-[#5a5142]">
-                {caseDef.victim.role}
-              </div>
+              <div className="font-typewriter mt-2 text-center text-sm font-bold uppercase text-[#211c14]">{caseDef.victim.name}</div>
+              <div className="font-typewriter text-center text-[10px] uppercase text-[#5a5142]">{caseDef.victim.role}</div>
             </div>
-          </motion.div>
+          </div>
+
+          {/* suspects, as polaroids */}
+          {suspects.map((s) => {
+            const id = `sus:${s.id}`;
+            const p = pos(id);
+            const rt = progress.suspectRuntimes[s.id];
+            return (
+              <div
+                key={id}
+                className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none active:cursor-grabbing"
+                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                onPointerDown={(e) => startDrag(id, e)}
+              >
+                <div className="relative w-28 bg-[#f4f0e8] p-2 pb-1 shadow-[0_8px_22px_rgba(0,0,0,0.55)]" style={{ transform: `rotate(${tiltOf(id)}deg)` }}>
+                  {cardPin(id, "#3a8aff")}
+                  <div className="flex justify-center bg-[#0c0816]">
+                    <Portrait def={s.portrait} seed={s.id} size={72} mood={(rt?.mood as never) ?? "neutral"} />
+                  </div>
+                  <div className="font-hand mt-1 truncate text-center text-[13px] leading-tight text-[#2a2030]">{s.name.split(" ")[0]}</div>
+                  <div className="font-typewriter truncate text-center text-[8px] uppercase text-[#6a5a52]">{s.role}</div>
+                </div>
+              </div>
+            );
+          })}
 
           {/* pinned evidence */}
           <AnimatePresence>
-            {pinned.map((id) => {
-              const ev = caseDef.evidence.find((e) => e.id === id);
-              const pos = positions[id];
-              if (!ev || !pos) return null;
+            {pinned.map((evId) => {
+              const ev = caseDef.evidence.find((e) => e.id === evId);
+              if (!ev) return null;
+              const id = `ev:${evId}`;
+              const p = pos(id);
               return (
                 <motion.div
                   key={id}
-                  drag
-                  dragMomentum={false}
                   initial={{ opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1, rotate: pos.r }}
+                  animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.6 }}
-                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing"
-                  style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none active:cursor-grabbing"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                  onPointerDown={(e) => startDrag(id, e)}
                 >
-                  <div className="w-36 rounded-[2px] bg-[#ddd6c4] p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.55)]">
-                    <div className="absolute left-1/2 top-0.5 h-2 w-2 -translate-x-1/2 rounded-full bg-[var(--rose)]" />
+                  <div className="relative w-36 rounded-[2px] bg-[#e4dcc8] p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.55)]" style={{ transform: `rotate(${tiltOf(id)}deg)` }}>
+                    {cardPin(id)}
                     <div className="flex items-center gap-2">
-                      <span className="text-xl text-[#7a4a1e]">{EVIDENCE_GLYPH[ev.icon] ?? "◈"}</span>
-                      <span className="font-typewriter text-[11px] font-bold uppercase leading-tight text-[#211c14]">
-                        {ev.name}
-                      </span>
+                      <EvidenceIcon icon={ev.icon} size={24} />
+                      <span className="font-typewriter text-[11px] font-bold uppercase leading-tight text-[#211c14]">{ev.name}</span>
                     </div>
-                    <p className="font-typewriter mt-1.5 text-[10px] leading-snug text-[#4a4234]">
-                      {ev.summary}
-                    </p>
+                    <p className="font-typewriter mt-1.5 line-clamp-3 text-[10px] leading-snug text-[#4a4234]">{ev.summary}</p>
                     <div className="mt-2 flex justify-between">
-                      <button
-                        onClick={() => openEvidence(ev.id)}
-                        className="font-typewriter text-[9px] font-bold uppercase text-[#7a4a1e] hover:underline"
-                      >
+                      <button onClick={() => openEvidence(ev.id)} className="font-typewriter text-[9px] font-bold uppercase text-[#7a4a1e] hover:underline">
                         Examine
                       </button>
-                      <button
-                        onClick={() => togglePin(ev.id)}
-                        className="font-typewriter text-[9px] font-bold uppercase text-[#8a2c2c] hover:underline"
-                      >
+                      <button onClick={() => togglePin(ev.id)} className="font-typewriter text-[9px] font-bold uppercase text-[#8a2c2c] hover:underline">
                         Unpin
                       </button>
                     </div>
@@ -333,10 +511,10 @@ export function BoardView() {
           </AnimatePresence>
 
           {pinned.length === 0 && (
-            <div className="absolute inset-x-0 top-[68%] text-center text-[var(--steel)]">
+            <div className="absolute inset-x-0 top-[74%] text-center text-[var(--steel)]">
               <p className="mx-auto max-w-md italic">
-                The board is waiting, Detective. Pin evidence from the locker and let the strings do their
-                thinking.
+                The board is waiting, Detective. Pin evidence from the locker, then tie strings between what belongs
+                together.
               </p>
             </div>
           )}
@@ -378,7 +556,7 @@ export function NotebookView() {
                 }}
                 className={`font-label rounded-sm border px-3 py-1.5 ${
                   tab === t
-                    ? "border-[rgba(255, 180, 61,0.6)] text-[var(--amber)]"
+                    ? "border-[rgba(255,180,61,0.6)] text-[var(--amber)]"
                     : "border-[var(--line)] text-[var(--steel)]"
                 }`}
               >
@@ -407,7 +585,7 @@ export function NotebookView() {
                     key={sid}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`glass flex gap-4 rounded-sm p-5 ${contradicted ? "border-[rgba(255, 58, 110,0.5)]" : ""}`}
+                    className={`glass flex gap-4 rounded-sm p-5 ${contradicted ? "border-[rgba(255,58,110,0.5)]" : ""}`}
                   >
                     {suspect && <Portrait def={suspect.portrait} seed={suspect.id} size={48} />}
                     <div className="flex-1">

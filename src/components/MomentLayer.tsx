@@ -49,8 +49,8 @@ export default function MomentLayer() {
             style={{
               background:
                 moment.kind === "contradiction"
-                  ? "radial-gradient(ellipse at center, rgba(255, 58, 110,0.28) 0%, rgba(40,6,12,0.86) 70%)"
-                  : "radial-gradient(ellipse at center, rgba(255, 180, 61,0.16) 0%, rgba(10,6,4,0.8) 70%)",
+                  ? "radial-gradient(ellipse at center, rgba(255,58,110,0.28) 0%, rgba(40,6,12,0.86) 70%)"
+                  : "radial-gradient(ellipse at center, rgba(255,180,61,0.16) 0%, rgba(10,6,4,0.8) 70%)",
             }}
           />
 
@@ -85,7 +85,7 @@ export default function MomentLayer() {
                   />
                 </p>
                 {evidence && (
-                  <div className="mt-5 inline-flex items-center gap-2 rounded-sm border border-[rgba(255, 58, 110,0.4)] bg-[rgba(10,6,8,0.6)] px-3 py-2">
+                  <div className="mt-5 inline-flex items-center gap-2 rounded-sm border border-[rgba(255,58,110,0.4)] bg-[rgba(10,6,8,0.6)] px-3 py-2">
                     <EvidenceIcon icon={evidence.icon} size={22} />
                     <span className="font-label text-[var(--paper-dim)]">BROKEN BY · {evidence.name.toUpperCase()}</span>
                   </div>

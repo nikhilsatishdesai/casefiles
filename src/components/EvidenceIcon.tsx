@@ -61,7 +61,7 @@ export default function EvidenceIcon({
         height: size,
         filter: muted
           ? "grayscale(1) brightness(0.55)"
-          : "drop-shadow(0 1px 0 rgba(0,0,0,0.55)) drop-shadow(0 0 6px rgba(255, 180, 61,0.12))",
+          : "drop-shadow(0 1px 0 rgba(0,0,0,0.55)) drop-shadow(0 0 6px rgba(255,180,61,0.12))",
       }}
     />
   );

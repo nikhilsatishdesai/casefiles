@@ -84,7 +84,7 @@ export function drawPortrait(
       ctx.fillRect(x0, y, 4, 1);
     }
   }
-  ctx.fillStyle = "rgba(5, 3, 12,0.45)";
+  ctx.fillStyle = "rgba(5,3,12,0.45)";
   ctx.fillRect(0, 0, 5, H);
 
   const age = p.age;
@@ -355,7 +355,7 @@ export function drawPortrait(
     px(32, 20 + Math.floor(rnd() * 2), "#e8f8ff");
   }
   if (mood === "angry") {
-    ctx.fillStyle = "rgba(255, 58, 110,0.32)";
+    ctx.fillStyle = "rgba(255,58,110,0.32)";
     ctx.fillRect(18, 30 + by, 3, 2);
     ctx.fillRect(28, 30 + by, 3, 2);
   }
