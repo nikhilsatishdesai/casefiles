@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import PixelStage from "@/components/PixelStage";
 import Portrait from "@/components/Portrait";
 import { useGame, activeCase } from "@/lib/engine/store";
 import { Label, GhostButton, PrimaryButton, StarRow } from "@/components/ui/bits";
 import { rankForXp, nextRank } from "@/lib/engine/scoring";
+import { ALL_CASES } from "@/lib/cases";
+import { useReducedMotionPref } from "@/lib/useMotion";
 import { audio } from "@/lib/audio/engine";
 
 /* ------------------------------------------------------------------ */
@@ -17,18 +19,31 @@ export function RevealView() {
   const caseDef = useGame((s) => activeCase(s));
   const finishReveal = useGame((s) => s.finishReveal);
   const [stage, setStage] = useState(0);
-  if (!caseDef) return null;
-
-  const culprit = caseDef.suspects.find((s) => s.id === caseDef.solution.culpritId)!;
-  const paragraphs = caseDef.solution.explanation;
   // stages: 0 = arrest card, 1..paragraphs = explanation, then timeline, then epilogue
-  const maxStage = paragraphs.length + 2;
+  const maxStage = (caseDef?.solution.explanation.length ?? 0) + 2;
 
   const advance = () => {
     audio.ui("page");
     if (stage >= maxStage) finishReveal();
     else setStage((s) => s + 1);
   };
+  const advanceRef = useRef(advance);
+  advanceRef.current = advance;
+  // Space, Enter or → turn the page
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === " " || e.key === "Enter" || e.key === "ArrowRight") {
+        e.preventDefault();
+        advanceRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  if (!caseDef) return null;
+  const culprit = caseDef.suspects.find((s) => s.id === caseDef.solution.culpritId)!;
+  const paragraphs = caseDef.solution.explanation;
 
   return (
     <div className="absolute inset-0 bg-[#05030a]" onClick={advance}>
@@ -79,7 +94,7 @@ export function RevealView() {
                   transition={{ delay: 2.8 }}
                   className="font-label mt-10 text-[var(--steel-dim)]"
                 >
-                  CLICK TO HEAR HOW YOU KNEW
+                  CLICK OR PRESS SPACE TO HEAR HOW YOU KNEW
                 </motion.div>
               </motion.div>
             )}
@@ -176,24 +191,58 @@ export function RatingView() {
   const progress = useGame((s) => (s.activeCaseId ? s.progress[s.activeCaseId] : null));
   const profile = useGame((s) => s.profile);
   const setView = useGame((s) => s.setView);
+  const startCase = useGame((s) => s.startCase);
+  const reduce = useReducedMotionPref();
+  const target = progress?.score?.points ?? 0;
+  const [shown, setShown] = useState(0);
+
+  // the tally runs up like a cash register
+  useEffect(() => {
+    if (reduce || !target) {
+      setShown(target);
+      return;
+    }
+    let raf = 0;
+    let lastTick = 0;
+    const t0 = performance.now() + 700;
+    const dur = 1500;
+    const step = (now: number) => {
+      const k = Math.max(0, Math.min(1, (now - t0) / dur));
+      const eased = 1 - Math.pow(1 - k, 3);
+      setShown(Math.round(target * eased));
+      if (k > 0 && k < 1 && now - lastTick > 70) {
+        lastTick = now;
+        audio.ui("tick");
+      }
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, reduce]);
+
   if (!caseDef || !progress?.score) return null;
   const sc = progress.score;
   const next = nextRank(profile.xp);
 
-  const rows: [string, string, boolean][] = [
-    ["Culprit identified", sc.correct ? "Correct" : "Wrong", sc.correct],
-    ["Motive named", sc.motiveCorrect ? "Correct" : "Missed", sc.motiveCorrect],
-    [
-      "Key evidence cited",
-      `${sc.evidenceCitedCorrect} / ${caseDef.solution.keyEvidence.length}`,
-      sc.evidenceCitedCorrect >= caseDef.solution.keyEvidence.length,
-    ],
-    ["Evidence recovered", `${sc.evidenceFound} / ${sc.evidenceTotal}`, sc.evidenceFound === sc.evidenceTotal],
-    ["Contradictions exposed", `${sc.contradictions}`, sc.contradictions > 0],
-    ["Wrong accusations", `${sc.wrongAccusations}`, sc.wrongAccusations === 0],
-    ["Hints used", `${sc.hintsUsed}`, sc.hintsUsed === 0],
-    ["Time on the case", `${sc.minutes} min`, sc.minutes <= 45],
+  // where the points came from
+  const keyN = Math.max(1, caseDef.solution.keyEvidence.length);
+  const timeFactor = Math.max(0, 1 - Math.max(0, sc.minutes - 20) / 70);
+  const parts: [string, string, number][] = [
+    ["Culprit named", sc.correct ? "correct" : "wrong", sc.correct ? 500 : 0],
+    ["Motive", sc.motiveCorrect ? "correct" : "missed", sc.motiveCorrect ? 150 : 0],
+    ["Key evidence cited", `${sc.evidenceCitedCorrect} / ${caseDef.solution.keyEvidence.length}`, sc.evidenceCitedCorrect * 75],
+    ["Contradictions exposed", `${sc.contradictions}`, sc.contradictions * 60],
+    ["Evidence recovered", `${sc.evidenceFound} / ${sc.evidenceTotal}`, Math.round((sc.evidenceFound / Math.max(1, sc.evidenceTotal)) * 200)],
+    ["Swift justice", `${sc.minutes} min`, sc.correct ? Math.round(150 * timeFactor * (sc.evidenceCitedCorrect / keyN)) : 0],
+    ["Wrong accusations", `${sc.wrongAccusations}`, -sc.wrongAccusations * 150],
+    ["Hints taken", `${sc.hintsUsed}`, -sc.hintsUsed * 50],
   ];
+  const listed = parts.reduce((a, p) => a + p[2], 0);
+  if (sc.points > 0 && sc.points - listed > 0) parts.splice(3, 0, ["Supporting exhibits", "cited", sc.points - listed]);
+
+  const nextCase = ALL_CASES.slice()
+    .sort((a, b) => a.number - b.number)
+    .find((c) => c.id !== caseDef.id && !profile.completed[c.id]);
 
   return (
     <div className="absolute inset-0">
@@ -207,31 +256,35 @@ export function RatingView() {
           className="glass-bright my-auto w-full max-w-lg rounded-sm p-8"
         >
           <Label className="text-center">EPISODE {String(caseDef.number).padStart(2, "0")} · DETECTIVE RATING</Label>
-          <h2 className="mt-2 text-center font-display text-2xl text-[var(--paper)]">{sc.rankTitle}</h2>
+          <h2 className="text-glow-pink mt-2 text-center font-display text-2xl text-[var(--paper)]">{sc.rankTitle}</h2>
           <div className="mt-4 flex justify-center">
             <motion.div
               initial={{ scale: 0.6, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.4, type: "spring", stiffness: 200, damping: 14 }}
+              transition={{ delay: 2.3, type: "spring", stiffness: 200, damping: 12 }}
             >
-              <StarRow n={sc.stars} size={26} />
+              <StarRow n={sc.stars} size={28} />
             </motion.div>
           </div>
-          <div className="mt-2 text-center font-mono-doc text-sm text-[var(--amber)]">
-            {sc.points.toLocaleString()} PTS
+          <div className="text-glow-amber mt-3 text-center font-mono-doc text-3xl text-[var(--amber)] tabular-nums">
+            {shown.toLocaleString()} <span className="text-base">PTS</span>
           </div>
 
           <div className="mt-6 space-y-1.5">
-            {rows.map(([k, v, good], i) => (
+            {parts.map(([k, detail, pts], i) => (
               <motion.div
                 key={k}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.08 }}
-                className="flex items-center justify-between border-b border-[var(--line)] pb-1.5 text-sm"
+                transition={{ delay: 0.6 + i * 0.12 }}
+                className="flex items-center justify-between gap-3 border-b border-[var(--line)] pb-1.5 text-sm"
               >
-                <span className="text-[var(--steel)]">{k}</span>
-                <span className={good ? "text-[var(--teal)]" : "text-[var(--paper-dim)]"}>{v}</span>
+                <span className="text-[var(--steel)]">
+                  {k} <span className="text-[var(--steel-dim)]">· {detail}</span>
+                </span>
+                <span className={`font-mono-doc tabular-nums ${pts > 0 ? "text-[var(--teal)]" : pts < 0 ? "text-[var(--rose)]" : "text-[var(--steel-dim)]"}`}>
+                  {pts > 0 ? `+${pts}` : pts < 0 ? `${pts}` : "—"}
+                </span>
               </motion.div>
             ))}
           </div>
@@ -247,8 +300,8 @@ export function RatingView() {
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${Math.min(100, (profile.xp / next.xp) * 100)}%` }}
-                    transition={{ delay: 1, duration: 1.2, ease: "easeOut" }}
-                    className="h-1 rounded bg-[var(--amber)]"
+                    transition={{ delay: 1.6, duration: 1.2, ease: "easeOut" }}
+                    className="h-1 rounded bg-gradient-to-r from-[#ff2e88] to-[#ffc46b]"
                   />
                 </div>
                 <div className="font-label mt-1.5 text-right text-[var(--steel-dim)]">
@@ -258,9 +311,14 @@ export function RatingView() {
             )}
           </div>
 
-          <div className="mt-8 flex justify-center gap-3">
-            <GhostButton onClick={() => setView("standings")}>PRECINCT STANDINGS</GhostButton>
-            <PrimaryButton onClick={() => setView("office")}>BACK TO THE OFFICE →</PrimaryButton>
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <GhostButton onClick={() => setView("standings")}>STANDINGS</GhostButton>
+            <GhostButton onClick={() => setView("office")}>THE OFFICE</GhostButton>
+            {nextCase && (
+              <PrimaryButton onClick={() => startCase(nextCase.id)}>
+                NEXT: {nextCase.title.toUpperCase()} →
+              </PrimaryButton>
+            )}
           </div>
         </motion.div>
       </div>

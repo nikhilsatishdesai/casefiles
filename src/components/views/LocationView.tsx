@@ -7,7 +7,7 @@ import Portrait from "@/components/Portrait";
 import type { IsoStageApi, TargetState } from "@/components/IsoStage";
 import { useGame, activeCase } from "@/lib/engine/store";
 import { cityLocation } from "@/lib/city/veilport";
-import { Label, GhostButton } from "@/components/ui/bits";
+import { Label, GhostButton, Tip } from "@/components/ui/bits";
 import { audio } from "@/lib/audio/engine";
 import type { HotspotDef } from "@/lib/engine/types";
 import type { IsoTarget } from "@/lib/iso/types";
@@ -128,6 +128,12 @@ export default function LocationView() {
           </div>
         </div>
       </div>
+
+      <Tip id="walk" title="WORKING THE SCENE" className="absolute left-1/2 top-[calc(6vh+8px)] -translate-x-1/2">
+        Walk with <b className="text-[var(--paper)]">WASD</b> or the arrow keys, or click where you want to go. Walk up to anything
+        with a marker and press <b className="text-[var(--paper)]">SPACE</b> — or just click it. <span className="text-[#ffc46b]">Amber</span> markers
+        still hold evidence; people with a speech bubble will talk.
+      </Tip>
 
       {/* controls */}
       <div className="font-label pointer-events-none absolute right-4 top-[calc(6vh+52px)] z-10 hidden text-right leading-6 text-[var(--steel)] md:right-10 md:block">

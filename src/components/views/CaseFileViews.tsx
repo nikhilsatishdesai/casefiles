@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Portrait from "@/components/Portrait";
-import { useGame, activeCase } from "@/lib/engine/store";
-import { Label, GhostButton } from "@/components/ui/bits";
+import { useGame, activeCase, locationUnlocked } from "@/lib/engine/store";
+import { Label, GhostButton, Tip } from "@/components/ui/bits";
 import EvidenceIcon from "@/components/EvidenceIcon";
 import { rngFor } from "@/lib/engine/rng";
 import { audio } from "@/lib/audio/engine";
@@ -510,6 +510,11 @@ export function BoardView() {
             })}
           </AnimatePresence>
 
+          <Tip id="board" title="THE BOARD" className="absolute bottom-2 left-1/2 -translate-x-1/2">
+            Drag cards wherever they make sense to you. Click one pin, then another, to tie a string between them; click
+            the knot in a string to cut it. Pin more evidence from the locker.
+          </Tip>
+
           {pinned.length === 0 && (
             <div className="absolute inset-x-0 top-[74%] text-center text-[var(--steel)]">
               <p className="mx-auto max-w-md italic">
@@ -533,6 +538,7 @@ export function NotebookView() {
   const progress = useGame((s) => (s.activeCaseId ? s.progress[s.activeCaseId] : null));
   const setNotes = useGame((s) => s.setNotes);
   const talkTo = useGame((s) => s.talkTo);
+  const setView = useGame((s) => s.setView);
   const [tab, setTab] = useState<"statements" | "suspects" | "notes">("statements");
   if (!caseDef || !progress) return null;
 
@@ -546,7 +552,17 @@ export function NotebookView() {
             <Label>CASE FILE · EPISODE {String(caseDef.number).padStart(2, "0")}</Label>
             <h2 className="mt-1 font-display text-xl text-[var(--paper)] md:text-2xl">DETECTIVE&apos;S NOTEBOOK</h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                audio.ui("page");
+                setView("briefing");
+              }}
+              className="font-label rounded-sm border border-[var(--line)] px-3 py-1.5 text-[var(--steel)] hover:text-[var(--paper-dim)]"
+              title="Hear Captain Voss's briefing again"
+            >
+              BRIEFING ↺
+            </button>
             {(["statements", "suspects", "notes"] as const).map((t) => (
               <button
                 key={t}
@@ -612,6 +628,9 @@ export function NotebookView() {
               {suspects.map((s) => {
                 const rt = progress.suspectRuntimes[s.id];
                 const talked = !!rt?.greeted;
+                // you can't question someone behind a door you haven't opened
+                const lockedLoc = caseDef.locations.find((l) => l.locationId === s.presence);
+                const reachable = !lockedLoc || locationUnlocked(caseDef, s.presence, progress.foundEvidence);
                 return (
                   <div key={s.id} className="glass flex gap-4 rounded-sm p-5">
                     <Portrait def={s.portrait} seed={s.id} size={68} mood={(rt?.mood as never) ?? "neutral"} />
@@ -629,12 +648,19 @@ export function NotebookView() {
                           <span className="text-[var(--paper-dim)]">{s.motiveHint}</span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => talkTo(s.id)}
-                        className="font-label mt-3 text-[var(--amber)] hover:text-[var(--paper)]"
-                      >
-                        {talked ? "QUESTION AGAIN →" : "INTERVIEW →"}
-                      </button>
+                      {reachable ? (
+                        <button
+                          onClick={() => talkTo(s.id)}
+                          className="font-label mt-3 text-[var(--amber)] hover:text-[var(--paper)]"
+                        >
+                          {talked ? "QUESTION AGAIN →" : "INTERVIEW →"}
+                        </button>
+                      ) : (
+                        <div className="mt-3">
+                          <span className="font-label text-[var(--steel-dim)]">◇ NO ACCESS YET</span>
+                          {lockedLoc?.locked && <p className="mt-1 text-[11px] leading-snug text-[var(--steel)]">{lockedLoc.locked.note}</p>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

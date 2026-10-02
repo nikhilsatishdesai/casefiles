@@ -94,6 +94,54 @@ export function StarRow({ n, size = 18 }: { n: number; size?: number }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* First-time tips                                                     */
+/* ------------------------------------------------------------------ */
+
+/** A one-time pointer, remembered per detective once dismissed. */
+export function Tip({
+  id,
+  title,
+  children,
+  className = "",
+}: {
+  id: string;
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  const seen = useGame((s) => s.profile.seenTips.includes(id));
+  const markTipSeen = useGame((s) => s.markTipSeen);
+  return (
+    <AnimatePresence>
+      {!seen && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ delay: 0.9, duration: 0.45 }}
+          role="note"
+          className={`glass-bright pointer-events-auto z-30 w-[min(92vw,380px)] rounded-sm border-[rgba(58,240,255,0.4)] p-4 shadow-[0_0_30px_rgba(58,240,255,0.15)] ${className}`}
+        >
+          <div className="font-label text-[var(--cyan)]">◆ {title}</div>
+          <div className="mt-2 text-sm leading-relaxed text-[var(--paper-dim)]">{children}</div>
+          <div className="mt-3 text-right">
+            <button
+              className="font-label text-[var(--amber)] hover:text-[var(--paper)]"
+              onClick={() => {
+                audio.ui("click");
+                markTipSeen(id);
+              }}
+            >
+              GOT IT
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Toast                                                               */
 /* ------------------------------------------------------------------ */
 

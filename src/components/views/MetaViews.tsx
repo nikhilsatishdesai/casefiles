@@ -296,8 +296,29 @@ export function SettingsView() {
               </button>
             </div>
             <div className="mt-5">
+              <Label className="mb-2">TEXT SPEED</Label>
+              <div className="flex gap-1.5">
+                {(["slow", "normal", "fast", "instant"] as const).map((sp) => (
+                  <button
+                    key={sp}
+                    onClick={() => {
+                      audio.ui("click");
+                      updateSettings({ textSpeed: sp });
+                    }}
+                    className={`font-label flex-1 rounded-sm border px-2 py-1.5 ${
+                      settings.textSpeed === sp ? "border-[var(--amber)] text-[var(--amber)]" : "border-[var(--line)] text-[var(--steel)] hover:text-[var(--paper-dim)]"
+                    }`}
+                  >
+                    {sp.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-5">
               <Label className="mb-2">KEYBOARD SHORTCUTS</Label>
               <div className="grid grid-cols-2 gap-1.5 text-xs text-[var(--steel)]">
+                <span><Kbd k="WASD" /> Walk</span>
+                <span><Kbd k="Space" /> Inspect · talk</span>
                 <span><Kbd k="M" /> City map</span>
                 <span><Kbd k="E" /> Evidence</span>
                 <span><Kbd k="B" /> Board</span>

@@ -10,7 +10,7 @@ import { useGame, activeCase, type ChatMessage } from "@/lib/engine/store";
 import { explorationOf } from "@/lib/engine/interrogation";
 import { leadsFor, normalizeCorpus } from "@/lib/engine/leads";
 import { cityLocation } from "@/lib/city/veilport";
-import { GhostButton } from "@/components/ui/bits";
+import { GhostButton, Tip } from "@/components/ui/bits";
 import { useEscapeLayer } from "@/components/ui/escape";
 import { useTextCps } from "@/lib/useMotion";
 import { audio } from "@/lib/audio/engine";
@@ -285,6 +285,11 @@ export default function InterrogationView() {
             )}
 
             {/* leads */}
+            <Tip id="interrogate" title="QUESTIONING" className="mb-3">
+              Ask anything in your own words, or tap a lead. When an answer doesn&apos;t sit right,{" "}
+              <b className="text-[var(--paper)]">PRESENT</b> the evidence that proves otherwise — a caught lie goes on the record and
+              rattles them.
+            </Tip>
             {leads.length > 0 && (
               <div className="mt-2">
                 <div className="font-label mb-1.5 text-[var(--steel-dim)]">LEADS</div>

@@ -365,6 +365,9 @@ export const useGame = create<GameState>()(
           const caseDef = activeCase(get());
           const suspect = caseDef?.suspects.find((x) => x.id === suspectId);
           if (!caseDef || !suspect) return;
+          // nobody behind a locked door takes questions
+          const p0 = get().progress[caseDef.id];
+          if (p0 && caseDef.locations.some((l) => l.locationId === suspect.presence) && !locationUnlocked(caseDef, suspect.presence, p0.foundEvidence)) return;
           set((s) => {
             const p = s.progress[caseDef.id];
             const rt = cloneRuntime(p.suspectRuntimes[suspectId]);
