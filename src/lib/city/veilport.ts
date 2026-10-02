@@ -25,7 +25,7 @@ export const CITY_LOCATIONS: CityLocation[] = [
     name: "Financial District",
     district: "Financial District",
     blurb: "Glass towers that never sleep and money that never rests.",
-    scene: "skyline",
+    scene: "highrise",
     mapX: 52,
     mapY: 38,
   },

@@ -24,6 +24,7 @@ export type SceneId =
   | "university"
   | "newsroom"
   | "docks"
+  | "highrise"
   | "citymap";
 
 export interface Weather {
