@@ -46,6 +46,8 @@ interface Props {
   onInteract: (t: IsoTarget) => void;
   /** the player moved or clicked (dismisses arrival narration) */
   onActivity?: () => void;
+  /** what's within reach changed */
+  onFocus?: (t: IsoTarget | null) => void;
   apiRef?: React.MutableRefObject<IsoStageApi | null>;
 }
 
@@ -273,6 +275,7 @@ function pointInPoly(x: number, y: number, poly: [number, number][]) {
 }
 
 function verb(t: IsoTarget, st?: TargetState) {
+  if (t.verb) return t.verb;
   if (t.kind === "npc") return st?.talked ? "Talk again" : "Talk to";
   if (t.kind === "exit") return "Leave";
   return st?.inspected ? "Look again" : "Inspect";
@@ -280,7 +283,7 @@ function verb(t: IsoTarget, st?: TargetState) {
 
 /* ------------------------------------------------------------------ */
 
-export default function IsoStage({ scene, states, weather, timeOfDay, paused, onInteract, onActivity, apiRef }: Props) {
+export default function IsoStage({ scene, states, weather, timeOfDay, paused, onInteract, onActivity, onFocus, apiRef }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const promptRef = useRef<HTMLButtonElement>(null);
   const labelRef = useRef<HTMLDivElement>(null);
@@ -288,8 +291,8 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
   statesRef.current = states;
   const pausedRef = useRef(!!paused);
   pausedRef.current = !!paused;
-  const cbRef = useRef({ onInteract, onActivity });
-  cbRef.current = { onInteract, onActivity };
+  const cbRef = useRef({ onInteract, onActivity, onFocus });
+  cbRef.current = { onInteract, onActivity, onFocus };
   const interactRef = useRef<(() => void) | null>(null);
   const reduce = useReducedMotionPref();
 
@@ -461,9 +464,9 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
         markerLayer.addChild(s);
         markers.set(tg.id, s);
       }
-      const exitTarget = scene.targets.find((tg) => tg.kind === "exit")!;
+      const exitTarget = scene.targets.find((tg) => tg.kind === "exit") ?? null;
       // which way is "out": off whichever edge the exit tile sits on
-      const [exX, exY] = exitTarget.tiles[0];
+      const [exX, exY] = exitTarget ? exitTarget.tiles[0] : [-9, -9];
       const outDir: [number, number] = exY >= t.h - 1 ? [0, 1] : exX >= t.w - 1 ? [1, 0] : exX <= 0 ? [-1, 0] : [0, -1];
       const exitG = new Graphics();
       floorFx.addChild(exitG);
@@ -675,7 +678,7 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
         const [u, v] = unIso(wx - b.ox, wy - b.oy);
         const tx = Math.floor(u);
         const ty = Math.floor(v);
-        if (exitTarget.tiles[0][0] === tx && exitTarget.tiles[0][1] === ty) return exitTarget;
+        if (exitTarget && exX === tx && exY === ty) return exitTarget;
         for (const tg of scene.targets) {
           if (tg.kind === "hotspot" && visible(tg) && tg.decor === undefined && !tg.propId && tg.tiles.some(([x, y]) => x === tx && y === ty)) return tg;
         }
@@ -814,6 +817,7 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
       const propBoxes: Box[] = room.props.map((p) => p.box);
       const prompt = promptRef.current;
       let lastPrompt = "";
+      let lastFocus: IsoTarget | null = null;
       let time = 0;
 
       const poseFor = (ac: Actor): Pose => {
@@ -986,6 +990,11 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
           }
         }
 
+        if (focus !== lastFocus) {
+          lastFocus = focus;
+          cbRef.current.onFocus?.(focus);
+        }
+
         /* ---- props & markers ---- */
         for (const pv of propViews) {
           const tg = pv.target;
@@ -1021,7 +1030,7 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
         }
         // the way out: chevrons sliding off the edge of the floor
         exitG.clear();
-        {
+        if (exitTarget) {
           const hot = focus === exitTarget || hover === exitTarget;
           const [ox, oy] = outDir;
           const [px2, py2] = [-oy, ox]; // across the edge
@@ -1194,6 +1203,7 @@ export default function IsoStage({ scene, states, weather, timeOfDay, paused, on
 
     return () => {
       destroyed = true;
+      cbRef.current.onFocus?.(null);
       saveMemory?.();
       for (const c of cleanups) c();
       interactRef.current = null;

@@ -97,6 +97,7 @@ export type PropKind =
   | "cooler"
   | "rope"
   | "rocks"
+  | "radio"
   | "marker";
 
 export interface Slot {
@@ -205,6 +206,8 @@ export interface IsoTarget {
   decor?: number;
   /** where its marker floats: tile x, tile y, px above the floor */
   anchor: [number, number, number];
+  /** what using it is called, when "Inspect" won't do ("Open", "Browse") */
+  verb?: string;
 }
 
 export interface IsoPerson {

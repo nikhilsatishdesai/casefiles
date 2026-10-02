@@ -25,6 +25,7 @@ const TALL: Partial<Record<PropKind, number>> = {
   globe: 30,
   easel: 40,
   cooler: 34,
+  radio: 30,
   bed: 18,
   bookcase: 58,
   cabinet: 40,
@@ -904,6 +905,17 @@ const P: Partial<Record<PropKind, Painter>> = {
     ellipse(c.g, x, y - 5, 5, 6, "rgba(120,200,255,0.75)");
     px(c.g, x - 2, y - 9, "rgba(255,255,255,0.7)", 1, 4);
   },
+  radio(c) {
+    // a cathedral radio on a side table, dial aglow
+    box(c, 0.2, 0.25, 0.6, 0.5, 14, "#3a2018");
+    box(c, 0.25, 0.3, 0.5, 0.36, 12, "#7a4424", 14);
+    const [x, y] = at(c, 0.5, 0.66, 20);
+    for (let i = 0; i < 4; i++) px(c.g, x - 4, y - 2 + i * 2, "#3a2014", 8, 1);
+    px(c.e, x - 3, y - 6, "#ffb43d", 6, 2);
+    px(c.e, x - 1, y - 6, "#fff0c0", 1, 2);
+    glow(c, x, y - 5, "#ffb43d", 16);
+    c.emitted = true;
+  },
   rocks(c) {
     // tumbled seawall stones, slick with spray
     for (let i = 0; i < 7; i++) {
@@ -1001,7 +1013,7 @@ export function propHeight(p: IsoProp): number {
 const FRONTED = new Set<PropKind>([
   "desk", "bookcase", "cabinet", "lockers", "drawers", "shelf", "barShelf", "mapCabinet", "counter", "bar", "sofa",
   "bench", "noticeboard", "departures", "trainCar", "radiator", "displayCase", "examTable", "lightTable", "sink", "bed",
-  "jukebox", "fireplace", "terminal", "chair", "armchair", "grandClock", "recordPlayer", "tideBoard", "cooler", "easel",
+  "jukebox", "fireplace", "terminal", "chair", "armchair", "grandClock", "recordPlayer", "tideBoard", "cooler", "easel", "radio",
 ]);
 
 function flip(c: HTMLCanvasElement): HTMLCanvasElement {

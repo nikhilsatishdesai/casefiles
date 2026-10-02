@@ -82,6 +82,9 @@ export default function LocationView() {
   );
 
   const onActivity = useCallback(() => setShowArrival(false), []);
+  const [near, setNear] = useState<IsoTarget | null>(null);
+  const onFocus = useCallback((t: IsoTarget | null) => setNear(t), []);
+  const nearPerson = near?.kind === "npc" ? caseDef?.suspects.find((x) => x.id === near.id) : undefined;
 
   if (!caseDef || !loc || !city || !progress || !scene) return null;
 
@@ -99,6 +102,7 @@ export default function LocationView() {
         paused={!!openSpot}
         onInteract={onInteract}
         onActivity={onActivity}
+        onFocus={onFocus}
         apiRef={apiRef}
       />
       <div className="vignette pointer-events-none" />
@@ -190,6 +194,33 @@ export default function LocationView() {
           })}
         </div>
       )}
+
+      {/* face to face: whoever you've walked up to, close enough to read */}
+      <AnimatePresence>
+        {nearPerson && !openSpot && (
+          <motion.div
+            key={nearPerson.id}
+            initial={{ opacity: 0, y: 12, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 8, scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+            className="glass pointer-events-none absolute bottom-[calc(var(--hud-clear)+58px)] left-1/2 z-20 flex -translate-x-1/2 items-center gap-4 rounded-sm border-[rgba(255,46,136,0.35)] p-3 pr-5 shadow-[0_0_30px_rgba(255,46,136,0.15)]"
+          >
+            <Portrait
+              def={nearPerson.portrait}
+              seed={nearPerson.id}
+              size={84}
+              animated
+              mood={(progress.suspectRuntimes[nearPerson.id]?.mood as never) ?? "neutral"}
+            />
+            <div>
+              <div className="font-label text-[#ff7ab8]">{nearPerson.isWitness ? "WITNESS" : "SUSPECT"}</div>
+              <div className="mt-1 text-base text-[var(--paper)]">{nearPerson.name}</div>
+              <div className="mt-0.5 max-w-[16rem] text-xs leading-snug text-[var(--paper-dim)]">{nearPerson.role}</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* inspection panel */}
       <AnimatePresence>
