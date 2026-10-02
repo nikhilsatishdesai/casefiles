@@ -9,6 +9,7 @@ import { cityLocation } from "@/lib/city/veilport";
 import { Label, GhostButton } from "@/components/ui/bits";
 import { audio } from "@/lib/audio/engine";
 import type { HotspotDef } from "@/lib/engine/types";
+import { useEscapeLayer } from "@/components/ui/escape";
 
 export default function LocationView() {
   const caseDef = useGame((s) => activeCase(s));
@@ -21,6 +22,7 @@ export default function LocationView() {
 
   const [openSpot, setOpenSpot] = useState<HotspotDef | null>(null);
   const [showArrival, setShowArrival] = useState(true);
+  useEscapeLayer(!!openSpot, () => setOpenSpot(null));
 
   const loc = caseDef?.locations.find((l) => l.locationId === locationId);
   const city = useMemo(() => (loc ? cityLocation(loc.locationId) : null), [loc]);

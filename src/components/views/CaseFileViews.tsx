@@ -8,6 +8,7 @@ import { Label, GhostButton, EVIDENCE_GLYPH } from "@/components/ui/bits";
 import { rngFor } from "@/lib/engine/rng";
 import { audio } from "@/lib/audio/engine";
 import type { EvidenceItem } from "@/lib/engine/types";
+import { useEscapeLayer } from "@/components/ui/escape";
 
 /* ------------------------------------------------------------------ */
 /* Evidence locker                                                     */
@@ -120,6 +121,7 @@ function EvidenceDetail({
   onClose: () => void;
 }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  useEscapeLayer(true, onClose);
   return (
     <motion.div
       initial={{ opacity: 0 }}

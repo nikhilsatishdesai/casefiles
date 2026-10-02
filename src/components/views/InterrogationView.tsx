@@ -16,7 +16,7 @@ export default function InterrogationView() {
   const progress = useGame((s) => (s.activeCaseId ? s.progress[s.activeCaseId] : null));
   const ask = useGame((s) => s.ask);
   const press = useGame((s) => s.press);
-  const setView = useGame((s) => s.setView);
+  const leaveInterrogation = useGame((s) => s.leaveInterrogation);
 
   const [input, setInput] = useState("");
   const [showEvidence, setShowEvidence] = useState(false);
@@ -108,7 +108,7 @@ export default function InterrogationView() {
               </div>
             )}
           </div>
-          <GhostButton onClick={() => setView("location")}>← LEAVE</GhostButton>
+          <GhostButton onClick={leaveInterrogation}>← LEAVE</GhostButton>
         </div>
 
         {/* transcript */}

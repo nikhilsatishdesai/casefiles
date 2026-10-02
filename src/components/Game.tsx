@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
-import { useGame, activeCase, type GameView } from "@/lib/engine/store";
+import { AnimatePresence, MotionConfig, motion, useAnimate } from "framer-motion";
+import { useGame, activeCase, INVESTIGATION_VIEWS, type GameView } from "@/lib/engine/store";
 import { audio, type MusicMode } from "@/lib/audio/engine";
-import { ToastLayer, ViewFade, Kbd, GhostButton } from "@/components/ui/bits";
+import { ToastLayer, ViewFade, Kbd } from "@/components/ui/bits";
+import { popEscapeLayer, hasEscapeLayer } from "@/components/ui/escape";
+import { useReducedMotionPref } from "@/lib/useMotion";
+import HintDialog from "@/components/HintDialog";
+import MomentLayer from "@/components/MomentLayer";
 
 import TitleView from "@/components/views/TitleView";
 import OfficeView from "@/components/views/OfficeView";
@@ -17,9 +21,7 @@ import AccuseView from "@/components/views/AccuseView";
 import { RevealView, RatingView } from "@/components/views/FinaleViews";
 import { ArchiveView, StandingsView, SettingsView, CreditsView } from "@/components/views/MetaViews";
 
-const CASE_VIEWS: GameView[] = [
-  "citymap", "location", "interrogation", "evidence", "board", "notebook", "accuse",
-];
+const CASE_VIEWS = INVESTIGATION_VIEWS;
 
 const VIEWS: Record<GameView, React.ComponentType> = {
   title: TitleView,
@@ -41,12 +43,33 @@ const VIEWS: Record<GameView, React.ComponentType> = {
   credits: CreditsView,
 };
 
+/** No input for this long and the investigation clock stops. */
+const IDLE_MS = 120_000;
+const TICK_MS = 5_000;
+
 export default function Game() {
   const view = useGame((s) => s.view);
   const setView = useGame((s) => s.setView);
   const hydrated = useGame((s) => s.hydrated);
   const caseDef = useGame((s) => activeCase(s));
-  const [hint, setHint] = useState<string | null>(null);
+  const moment = useGame((s) => s.moment);
+  const newEvidence = useGame((s) => {
+    const p = s.activeCaseId ? s.progress[s.activeCaseId] : null;
+    return p ? p.foundEvidence.filter((e) => !p.seenEvidence.includes(e)).length : 0;
+  });
+  const reduceMotion = useReducedMotionPref();
+  const [hintOpen, setHintOpen] = useState(false);
+  const [stageRef, animateStage] = useAnimate();
+
+  /* --- a lie collapsing should be felt ------------------------------ */
+  useEffect(() => {
+    if (!moment || moment.kind !== "contradiction" || reduceMotion || !stageRef.current) return;
+    void animateStage(
+      stageRef.current,
+      { x: [0, -10, 9, -7, 5, -3, 0], y: [0, 4, -3, 2, -1, 0, 0] },
+      { duration: 0.5, ease: "easeOut" }
+    );
+  }, [moment, reduceMotion, animateStage, stageRef]);
 
   /* --- audio direction: what does this scene sound like? ----------- */
   useEffect(() => {
@@ -75,47 +98,72 @@ export default function Game() {
     };
   }, []);
 
+  /* --- the investigation clock: active, visible, attended time only -- */
+  useEffect(() => {
+    let lastInput = Date.now();
+    const onInput = () => {
+      lastInput = Date.now();
+    };
+    const events = ["pointerdown", "pointermove", "keydown", "wheel", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, onInput, { passive: true }));
+    const id = setInterval(() => {
+      const s = useGame.getState();
+      if (!s.activeCaseId || !CASE_VIEWS.includes(s.view)) return;
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastInput > IDLE_MS) return;
+      s.addPlayTime(TICK_MS);
+    }, TICK_MS);
+    return () => {
+      clearInterval(id);
+      events.forEach((e) => window.removeEventListener(e, onInput));
+    };
+  }, []);
+
   /* --- keyboard shortcuts ------------------------------------------- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
-        if (e.key === "Escape") (target as HTMLInputElement).blur();
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        if (e.key === "Escape") target.blur();
         return;
       }
+      if (e.key === "Escape") {
+        // modals first, then one step back up the hierarchy
+        if (popEscapeLayer()) return;
+        const v = useGame.getState().view;
+        if (v === "interrogation") useGame.getState().leaveInterrogation();
+        else if (v === "location" || v === "evidence" || v === "board" || v === "notebook" || v === "accuse")
+          setView("citymap");
+        else if (v === "citymap") setView("office");
+        else if (v === "archive" || v === "standings" || v === "settings" || v === "credits")
+          setView("office");
+        return;
+      }
+      if (hasEscapeLayer()) return;
       const inCase = CASE_VIEWS.includes(useGame.getState().view);
+      if (!inCase) return;
       switch (e.key.toLowerCase()) {
         case "m":
-          if (inCase) setView("citymap");
+          setView("citymap");
           break;
         case "e":
-          if (inCase) setView("evidence");
+          setView("evidence");
           break;
         case "b":
-          if (inCase) setView("board");
+          setView("board");
           break;
         case "n":
-          if (inCase) setView("notebook");
+          setView("notebook");
           break;
         case "h":
-          if (inCase) setHint(useGame.getState().useHint());
+          setHintOpen(true);
           break;
-        case "escape": {
-          const v = useGame.getState().view;
-          if (hint) setHint(null);
-          else if (v === "interrogation") setView("location");
-          else if (v === "location" || v === "evidence" || v === "board" || v === "notebook" || v === "accuse")
-            setView("citymap");
-          else if (v === "citymap") setView("office");
-          else if (v === "archive" || v === "standings" || v === "settings" || v === "credits")
-            setView("office");
-          break;
-        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [setView, hint]);
+  }, [setView]);
 
   const Active = VIEWS[view];
   const showHud = CASE_VIEWS.includes(view);
@@ -132,101 +180,93 @@ export default function Game() {
   }
 
   return (
-    <main className="fixed inset-0 overflow-clip bg-[var(--ink)]" role="application" aria-label="CASEFILES">
-      <AnimatePresence mode="wait">
-        <ViewFade k={view}>
-          <Active />
-        </ViewFade>
-      </AnimatePresence>
+    <MotionConfig reducedMotion={reduceMotion ? "always" : "never"}>
+      <main className="fixed inset-0 overflow-clip bg-[var(--ink)]" role="application" aria-label="CASEFILES">
+        <div ref={stageRef} className="absolute inset-0">
+          <AnimatePresence mode="wait">
+            <ViewFade k={view}>
+              <Active />
+            </ViewFade>
+          </AnimatePresence>
+        </div>
 
-      {/* cinematic dressings */}
-      <div className="letterbox-top" />
-      <div className="letterbox-bottom" />
-      <div className="film-grain" />
+        {/* cinematic dressings */}
+        <div className="letterbox-top" />
+        <div className="letterbox-bottom" />
+        <div className="film-grain" />
 
-      <ToastLayer />
+        <ToastLayer />
 
-      {/* case HUD — the quiet dock */}
-      <AnimatePresence>
-        {showHud && (
-          <motion.nav
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.4 }}
-            className="fixed bottom-[calc(clamp(24px,4.5vh,56px)+10px)] left-1/2 z-40 w-max max-w-[calc(100vw-12px)] -translate-x-1/2"
-            aria-label="Case navigation"
-          >
-            <div className="glass-bright scroll-thin flex items-center gap-0.5 overflow-x-auto whitespace-nowrap rounded-sm px-1.5 py-1.5 sm:gap-1 sm:px-2">
-              <HudButton label="MAP" k="M" active={view === "citymap"} onClick={() => setView("citymap")} />
-              <HudButton label="EVIDENCE" k="E" active={view === "evidence"} onClick={() => setView("evidence")} />
-              <HudButton label="BOARD" k="B" active={view === "board"} onClick={() => setView("board")} />
-              <HudButton label="NOTEBOOK" k="N" active={view === "notebook"} onClick={() => setView("notebook")} />
-              <span className="mx-1 h-5 w-px bg-[var(--line-strong)]" />
-              <HudButton
-                label="HINT"
-                k="H"
-                active={false}
-                onClick={() => setHint(useGame.getState().useHint())}
-              />
-              <button
-                onClick={() => {
-                  audio.ui("click");
-                  setView("accuse");
-                }}
-                className={`font-label rounded-sm px-3 py-2 transition-colors ${
-                  view === "accuse"
-                    ? "bg-[rgba(224,92,110,0.18)] text-[var(--rose)]"
-                    : "text-[var(--rose)] opacity-80 hover:opacity-100"
-                }`}
-              >
-                ACCUSE
-              </button>
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-
-      {/* hint modal */}
-      <AnimatePresence>
-        {hint && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(4,6,10,0.7)] p-4"
-            onClick={() => setHint(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.94, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 10 }}
-              className="glass-bright w-full max-w-md rounded-sm p-7"
-              onClick={(e) => e.stopPropagation()}
+        {/* case HUD — the quiet dock */}
+        <AnimatePresence>
+          {showHud && (
+            <motion.nav
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.4 }}
+              className="hud-dock fixed left-1/2 z-40 w-max max-w-[calc(100vw-12px)] -translate-x-1/2"
+              aria-label="Case navigation"
             >
-              <div className="font-label text-[var(--teal)]">A WORD FROM CAPTAIN VOSS</div>
-              <p className="mt-4 italic leading-relaxed text-[var(--paper-dim)]">“{hint}”</p>
-              <p className="font-label mt-4 text-[var(--steel-dim)]">HINTS COST STANDING AT RATING TIME</p>
-              <div className="mt-5 text-right">
-                <GhostButton onClick={() => setHint(null)}>UNDERSTOOD</GhostButton>
+              <div className="glass-bright flex items-center gap-0.5 rounded-sm px-1 py-1 sm:gap-1 sm:px-2 sm:py-1.5">
+                <HudButton label="MAP" k="M" active={view === "citymap"} onClick={() => setView("citymap")} />
+                <HudButton
+                  label="EVIDENCE"
+                  short="FILES"
+                  k="E"
+                  active={view === "evidence"}
+                  badge={newEvidence}
+                  onClick={() => setView("evidence")}
+                />
+                <HudButton label="BOARD" k="B" active={view === "board"} onClick={() => setView("board")} />
+                <HudButton
+                  label="NOTEBOOK"
+                  short="NOTES"
+                  k="N"
+                  active={view === "notebook"}
+                  onClick={() => setView("notebook")}
+                />
+                <span className="mx-0.5 h-5 w-px bg-[var(--line-strong)] sm:mx-1" />
+                <HudButton label="HINT" k="H" active={hintOpen} onClick={() => setHintOpen(true)} />
+                <button
+                  onClick={() => {
+                    audio.ui("click");
+                    setView("accuse");
+                  }}
+                  className={`hud-btn font-label rounded-sm transition-colors ${
+                    view === "accuse"
+                      ? "bg-[rgba(224,92,110,0.18)] text-[var(--rose)]"
+                      : "text-[var(--rose)] opacity-80 hover:opacity-100"
+                  }`}
+                >
+                  ACCUSE
+                </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </main>
+            </motion.nav>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>{hintOpen && <HintDialog onClose={() => setHintOpen(false)} />}</AnimatePresence>
+
+        <MomentLayer />
+      </main>
+    </MotionConfig>
   );
 }
 
 function HudButton({
   label,
+  short,
   k,
   active,
+  badge = 0,
   onClick,
 }: {
   label: string;
+  short?: string;
   k: string;
   active: boolean;
+  badge?: number;
   onClick: () => void;
 }) {
   return (
@@ -236,16 +276,23 @@ function HudButton({
         onClick();
       }}
       onMouseEnter={() => audio.ui("hover")}
-      className={`font-label flex shrink-0 items-center gap-1.5 rounded-sm px-2 py-2 transition-colors sm:px-3 ${
+      aria-label={badge ? `${label} (${badge} new)` : label}
+      className={`hud-btn font-label relative flex shrink-0 items-center gap-1.5 rounded-sm transition-colors ${
         active
           ? "bg-[rgba(232,168,73,0.14)] text-[var(--amber)]"
           : "text-[var(--steel)] hover:text-[var(--paper-dim)]"
       }`}
     >
-      {label}
+      <span className="sm:hidden">{short ?? label}</span>
+      <span className="hidden sm:inline">{label}</span>
       <span className="hidden md:inline">
         <Kbd k={k} />
       </span>
+      {badge > 0 && (
+        <span className="absolute -right-1 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--amber)] px-1 text-[9px] font-semibold tracking-normal text-[#1a1206]">
+          {badge}
+        </span>
+      )}
     </button>
   );
 }

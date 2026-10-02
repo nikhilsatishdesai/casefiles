@@ -26,6 +26,39 @@ export interface SuspectRuntime {
   greeted: boolean;
 }
 
+/** Deep copy — the engine mutates runtimes, and saved state must never be touched in place. */
+export function cloneRuntime(rt: SuspectRuntime | undefined): SuspectRuntime {
+  if (!rt) return freshSuspectRuntime();
+  return {
+    ...rt,
+    topicHits: { ...rt.topicHits },
+    pressedEvidence: [...rt.pressedEvidence],
+    unlockedTopics: [...rt.unlockedTopics],
+  };
+}
+
+/** Topics this suspect can currently be asked about (requirements met). */
+export function availableTopics(
+  suspect: SuspectDef,
+  runtime: SuspectRuntime | undefined,
+  playerEvidence: string[]
+): Topic[] {
+  const rt = runtime ?? freshSuspectRuntime();
+  return suspect.topics.filter(
+    (topic) =>
+      (!topic.requiresEvidence || topic.requiresEvidence.every((e) => playerEvidence.includes(e))) &&
+      (!topic.requiresTopics ||
+        topic.requiresTopics.every((t) => (rt.topicHits[t] ?? 0) > 0 || rt.unlockedTopics.includes(t)))
+  );
+}
+
+/** How much of this person's knowledge the detective has heard. */
+export function explorationOf(suspect: SuspectDef, runtime: SuspectRuntime | undefined) {
+  const hits = runtime?.topicHits ?? {};
+  const explored = suspect.topics.filter((t) => (hits[t.id] ?? 0) > 0).length;
+  return { explored, total: suspect.topics.length };
+}
+
 export function freshSuspectRuntime(): SuspectRuntime {
   return {
     stress: 0,
@@ -116,21 +149,7 @@ export function askSuspect(
   // 1. find best topic
   let best: Topic | null = null;
   let bestScore = 0;
-  for (const topic of suspect.topics) {
-    if (
-      topic.requiresEvidence &&
-      !topic.requiresEvidence.every((e) => playerEvidence.includes(e))
-    ) {
-      continue;
-    }
-    if (
-      topic.requiresTopics &&
-      !topic.requiresTopics.every(
-        (t) => (runtime.topicHits[t] ?? 0) > 0 || runtime.unlockedTopics.includes(t)
-      )
-    ) {
-      continue;
-    }
+  for (const topic of availableTopics(suspect, runtime, playerEvidence)) {
     const score = scoreTopic(input, tokens, topic);
     if (score > bestScore) {
       bestScore = score;
@@ -221,40 +240,4 @@ export function pressSuspect(
 
 function clampStress(v: number): number {
   return Math.max(0, Math.min(100, v));
-}
-
-/** A gentle, engine-generated hint based on what the player is missing. */
-export function generateHint(
-  caseDef: CaseDef,
-  found: string[],
-  contradictionsFound: string[]
-): string {
-  // 1. missing key evidence → point at its location
-  for (const key of caseDef.solution.keyEvidence) {
-    if (!found.includes(key)) {
-      const ev = caseDef.evidence.find((e) => e.id === key);
-      if (!ev) continue;
-      if (ev.foundAt === "interview") {
-        return "Someone in this case is holding a truth they haven't surrendered yet. Press the nervous ones with the evidence that frightens them.";
-      }
-      const loc = caseDef.locations.find((l) => l.locationId === ev.foundAt);
-      const cityName = loc ? loc.sublabel ?? loc.locationId : ev.foundAt;
-      return `Something important is still waiting to be found — try a closer look around ${cityName}.`;
-    }
-  }
-  // 2. unexposed contradictions
-  const exposed = new Set(contradictionsFound);
-  for (const suspect of caseDef.suspects) {
-    for (const press of suspect.presses) {
-      if (
-        press.contradictsStatement &&
-        !exposed.has(press.contradictsStatement) &&
-        found.includes(press.evidenceId)
-      ) {
-        return `You already hold evidence that contradicts something ${suspect.name} told you. Confront them with it.`;
-      }
-    }
-  }
-  // 3. near the end
-  return "You have what you need, Detective. Read the statements against the evidence, mind the timeline — and ask who profits from the lie that fits them all.";
 }

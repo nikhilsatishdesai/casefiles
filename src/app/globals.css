@@ -109,6 +109,49 @@ body {
 .letterbox-top { top: 0; }
 .letterbox-bottom { bottom: 0; }
 
+/* ---------- case HUD ---------- */
+:root {
+  --letterbox: clamp(24px, 4.5vh, 56px);
+  /* clearance a view must leave above the dock */
+  --hud-clear: calc(var(--letterbox) + 64px);
+}
+.hud-dock {
+  bottom: calc(var(--letterbox) + 8px);
+}
+/* scrolling case views keep their last row clear of the dock */
+.view-scroll {
+  padding-bottom: calc(var(--hud-clear) + 12px);
+}
+.hud-btn {
+  padding: 0.5rem 0.4rem;
+  letter-spacing: 0.1em;
+}
+@media (min-width: 640px) {
+  .hud-btn {
+    padding: 0.5rem 0.75rem;
+    letter-spacing: 0.22em;
+  }
+}
+
+/* ---------- story moments ---------- */
+.moment-stamp {
+  border: 4px solid rgba(224, 92, 110, 0.95);
+  color: rgba(240, 110, 126, 1);
+  padding: 0.35rem 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  text-shadow: 0 0 24px rgba(224, 92, 110, 0.55);
+  box-shadow: 0 0 40px rgba(224, 92, 110, 0.25), inset 0 0 18px rgba(224, 92, 110, 0.2);
+  background: rgba(20, 4, 8, 0.35);
+}
+.moment-stamp-amber {
+  border-color: rgba(232, 168, 73, 0.9);
+  color: var(--amber);
+  text-shadow: 0 0 24px rgba(232, 168, 73, 0.5);
+  box-shadow: 0 0 40px rgba(232, 168, 73, 0.2), inset 0 0 18px rgba(232, 168, 73, 0.15);
+}
+
 /* ---------- glass panels ---------- */
 .glass {
   background: rgba(10, 14, 20, 0.72);
