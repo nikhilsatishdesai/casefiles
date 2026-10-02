@@ -380,7 +380,7 @@ class AudioEngine {
 
   ui(name:
     | "click" | "page" | "paper" | "evidence" | "statement" | "contradiction"
-    | "pin" | "travel" | "type" | "wrong" | "reveal" | "hover" | "stamp"
+    | "pin" | "travel" | "type" | "wrong" | "reveal" | "hover" | "stamp" | "tick"
   ) {
     if (!this.ctx || !this.sfxBus || !this.unlocked) return;
     const ctx = this.ctx;
@@ -429,6 +429,9 @@ class AudioEngine {
         break;
       case "type":
         blip(2400 + Math.random() * 800, 0.03, 0.05, "square", -800);
+        break;
+      case "tick":
+        noise(0.014, 0.035, 3200 + Math.random() * 1400, "highpass");
         break;
       case "pin":
         blip(600, 0.05, 0.15, "square", 300);

@@ -109,7 +109,7 @@ export function EvidenceView() {
   );
 }
 
-function EvidenceDetail({
+export function EvidenceDetail({
   ev,
   pinned,
   onPin,
