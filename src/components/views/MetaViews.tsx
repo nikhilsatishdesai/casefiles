@@ -53,7 +53,7 @@ export function ArchiveView() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 className={`glass-bright flex flex-wrap items-center gap-5 rounded-sm p-6 ${
-                  isToday ? "border-[rgba(232,168,73,0.45)]" : ""
+                  isToday ? "border-[rgba(255, 180, 61,0.45)]" : ""
                 }`}
               >
                 <div className="font-display text-3xl text-[var(--steel-dim)]">
@@ -186,7 +186,7 @@ export function StandingsView() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.06 }}
                 className={`grid grid-cols-[2.5rem_1fr_5rem_6rem_5rem] items-center gap-2 border-b border-[var(--line)] py-2.5 text-sm ${
-                  you ? "bg-[rgba(232,168,73,0.06)] text-[var(--amber)]" : "text-[var(--paper-dim)]"
+                  you ? "bg-[rgba(255, 180, 61,0.06)] text-[var(--amber)]" : "text-[var(--paper-dim)]"
                 }`}
               >
                 <span className="font-mono-doc">{i + 1}</span>

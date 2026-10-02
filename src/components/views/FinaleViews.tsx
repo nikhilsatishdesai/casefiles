@@ -31,7 +31,7 @@ export function RevealView() {
   };
 
   return (
-    <div className="absolute inset-0 bg-[#04060a]" onClick={advance}>
+    <div className="absolute inset-0 bg-[#05030a]" onClick={advance}>
       <PixelStage scene="precinct" weather={caseDef.weather} timeOfDay="night" seedKey={`${caseDef.id}:reveal`} dim={0.78} />
       <div className="vignette" />
 

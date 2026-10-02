@@ -832,6 +832,7 @@ export default function PixelStage({
     <div
       ref={hostRef}
       className={`pixelated absolute inset-0 overflow-hidden ${className ?? ""}`}
+      style={{ filter: "saturate(1.35) contrast(1.06) brightness(1.05)" }}
       aria-hidden="true"
     />
   );

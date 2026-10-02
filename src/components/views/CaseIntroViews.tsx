@@ -79,7 +79,9 @@ export function NewspaperView() {
           </div>
 
           <div className="mt-8 flex justify-center border-t border-[#5a5142] pt-6">
-            <PrimaryButton onClick={() => setView("briefing")}>REPORT TO CAPTAIN VOSS →</PrimaryButton>
+            <PrimaryButton className="btn-on-paper" onClick={() => setView("briefing")}>
+              REPORT TO CAPTAIN VOSS →
+            </PrimaryButton>
           </div>
         </motion.article>
       </div>

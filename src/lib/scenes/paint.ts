@@ -149,7 +149,7 @@ export function paintScene(scene: SceneId, weather: Weather, time: TimeOfDay, se
     wet: false,
     reflective: true,
   };
-  ctx.fillStyle = "#04060a";
+  ctx.fillStyle = "#05030a";
   ctx.fillRect(0, 0, SCENE_W, SCENE_H);
   PAINTERS[scene](ctx, mood, weather, rnd, out);
 

@@ -53,7 +53,7 @@ export function EvidenceView() {
               }}
               className={`font-label rounded-sm border px-3 py-1.5 transition-colors ${
                 filter === t
-                  ? "border-[rgba(232,168,73,0.6)] text-[var(--amber)]"
+                  ? "border-[rgba(255, 180, 61,0.6)] text-[var(--amber)]"
                   : "border-[var(--line)] text-[var(--steel)] hover:text-[var(--paper-dim)]"
               }`}
             >
@@ -79,8 +79,8 @@ export function EvidenceView() {
                 transition={{ delay: i * 0.04, duration: 0.4 }}
                 onClick={() => openEvidence(ev.id)}
                 onMouseEnter={() => audio.ui("hover")}
-                className={`glass group relative h-fit rounded-sm p-4 text-left transition-all duration-300 hover:border-[rgba(232,168,73,0.45)] ${
-                  pinned ? "border-[rgba(224,92,110,0.5)]" : ""
+                className={`glass group relative h-fit rounded-sm p-4 text-left transition-all duration-300 hover:border-[rgba(255, 180, 61,0.45)] ${
+                  pinned ? "border-[rgba(255, 58, 110,0.5)]" : ""
                 }`}
               >
                 {pinned && <span className="absolute right-2 top-2 text-[var(--rose)]">◉</span>}
@@ -127,7 +127,7 @@ export function EvidenceDetail({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(4,6,10,0.75)] p-4"
+      className="fixed inset-0 z-30 flex items-center justify-center bg-[rgba(5, 3, 12,0.75)] p-4"
       onClick={onClose}
     >
       <motion.div
@@ -175,7 +175,7 @@ export function EvidenceDetail({
               animate={{ rotateX: tilt.x, rotateY: tilt.y }}
               transition={{ type: "spring", stiffness: 200, damping: 24 }}
               style={{ transformPerspective: 600 }}
-              className="mx-auto flex h-36 w-36 items-center justify-center rounded-sm border border-[var(--line-strong)] bg-[rgba(4,6,10,0.5)]"
+              className="mx-auto flex h-36 w-36 items-center justify-center rounded-sm border border-[var(--line-strong)] bg-[rgba(5, 3, 12,0.5)]"
             >
               <span className="text-6xl text-[var(--amber)]">{EVIDENCE_GLYPH[ev.icon] ?? "◈"}</span>
             </motion.div>
@@ -192,7 +192,7 @@ export function EvidenceDetail({
               <Label className="mt-1">{ev.type.toUpperCase()} · FOUND: {ev.foundAt.toUpperCase()}</Label>
             </div>
             <div className="flex gap-2">
-              <GhostButton onClick={onPin} className={pinned ? "border-[rgba(224,92,110,0.6)] text-[var(--rose)]" : ""}>
+              <GhostButton onClick={onPin} className={pinned ? "border-[rgba(255, 58, 110,0.6)] text-[var(--rose)]" : ""}>
                 {pinned ? "◉ PINNED" : "PIN TO BOARD"}
               </GhostButton>
               <GhostButton onClick={onClose}>CLOSE</GhostButton>
@@ -378,7 +378,7 @@ export function NotebookView() {
                 }}
                 className={`font-label rounded-sm border px-3 py-1.5 ${
                   tab === t
-                    ? "border-[rgba(232,168,73,0.6)] text-[var(--amber)]"
+                    ? "border-[rgba(255, 180, 61,0.6)] text-[var(--amber)]"
                     : "border-[var(--line)] text-[var(--steel)]"
                 }`}
               >
@@ -407,7 +407,7 @@ export function NotebookView() {
                     key={sid}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className={`glass flex gap-4 rounded-sm p-5 ${contradicted ? "border-[rgba(224,92,110,0.5)]" : ""}`}
+                    className={`glass flex gap-4 rounded-sm p-5 ${contradicted ? "border-[rgba(255, 58, 110,0.5)]" : ""}`}
                   >
                     {suspect && <Portrait def={suspect.portrait} seed={suspect.id} size={48} />}
                     <div className="flex-1">

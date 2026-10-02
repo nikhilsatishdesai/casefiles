@@ -560,7 +560,7 @@ export const paintHarbor: Painter = (ctx, mood, weather, rnd, out) => {
   }
   for (const bx of [60, 130, 264, 396]) {
     const by = wallY(bx) + 4;
-    ctx.fillStyle = "#04060a";
+    ctx.fillStyle = "#05030a";
     ctx.fillRect(bx, by - 6, 6, 8);
     ctx.fillRect(bx + 1, by - 8, 4, 2);
   }
@@ -678,7 +678,7 @@ export const paintDocks: Painter = (ctx, mood, weather, rnd, out) => {
   streetLamp(ctx, 186, 230, mood, out, { color: "#f0a050", h: 44 });
   streetLamp(ctx, 336, 232, mood, out, { color: "#f0a050", h: 44 });
   for (const bx of [92, 240, 300]) {
-    ctx.fillStyle = "#04060a";
+    ctx.fillStyle = "#05030a";
     ctx.fillRect(bx, 224, 7, 8);
     ctx.fillRect(bx + 1, 222, 5, 2);
   }

@@ -46,7 +46,7 @@ export default function TitleView() {
           <div className="font-label mb-6 tracking-[0.5em] text-[var(--steel)]">
             A {CITY_NAME.toUpperCase()} MYSTERY SERIES
           </div>
-          <h1 className="font-display text-glow-amber text-5xl text-[var(--paper)] sm:text-7xl md:text-8xl">
+          <h1 className="font-display neon-wordmark text-5xl sm:text-7xl md:text-8xl">
             CASEFILES
           </h1>
           <motion.div
