@@ -378,6 +378,37 @@ class AudioEngine {
 
   /* -------------------------------------------------- sfx ---------- */
 
+  /** A footstep: a heel on boards, carpet, or a wet street. */
+  step(surface: "hard" | "soft" | "wet" = "hard") {
+    if (!this.ctx || !this.sfxBus || !this.unlocked) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const out = this.sfxBus;
+    const v = 0.75 + Math.random() * 0.5;
+    const burst = (dur: number, gain: number, freq: number, type: BiquadFilterType) => {
+      const src = ctx.createBufferSource();
+      src.buffer = this.makeNoise(dur);
+      const f = ctx.createBiquadFilter();
+      f.type = type;
+      f.frequency.value = freq * (0.9 + Math.random() * 0.2);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(gain * v, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      src.connect(f).connect(g).connect(out);
+      src.start(t);
+      src.stop(t + dur + 0.02);
+    };
+    if (surface === "soft") {
+      burst(0.08, 0.05, 420, "lowpass");
+    } else if (surface === "wet") {
+      burst(0.06, 0.06, 650, "lowpass");
+      burst(0.11, 0.028, 4200, "highpass");
+    } else {
+      burst(0.05, 0.07, 900, "lowpass");
+      burst(0.018, 0.035, 3400, "bandpass");
+    }
+  }
+
   ui(name:
     | "click" | "page" | "paper" | "evidence" | "statement" | "contradiction"
     | "pin" | "travel" | "type" | "wrong" | "reveal" | "hover" | "stamp" | "tick"

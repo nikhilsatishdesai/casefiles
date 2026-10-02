@@ -386,3 +386,33 @@ a:focus-visible,
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ---------- walking the city (iso stage) ---------- */
+.iso-prompt {
+  background: rgba(12, 6, 24, 0.82);
+  border: 1px solid rgba(122, 244, 255, 0.45);
+  box-shadow: 0 0 18px rgba(90, 240, 255, 0.18), inset 0 0 12px rgba(255, 46, 136, 0.08);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  letter-spacing: 0.18em;
+}
+.iso-prompt[data-on="0"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 6px);
+}
+.iso-prompt[data-on="1"] {
+  opacity: 1;
+}
+.iso-key {
+  border: 1px solid rgba(255, 196, 107, 0.7);
+  color: #ffc46b;
+  padding: 0.05rem 0.35rem;
+  border-radius: 2px;
+  box-shadow: 0 2px 0 rgba(255, 196, 107, 0.35);
+  font-size: 0.55rem;
+}
+@media (hover: none) {
+  .iso-key {
+    display: none;
+  }
+}
